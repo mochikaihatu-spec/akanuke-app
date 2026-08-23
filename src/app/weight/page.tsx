@@ -118,7 +118,7 @@ export default function WeightPage() {
                   ]}
                 />
                 <Tooltip
-                  formatter={(value: number) => [`${value} kg`, '体重']}
+                  formatter={(value) => [`${value} kg`, '体重']}
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                 />
                 <Line
