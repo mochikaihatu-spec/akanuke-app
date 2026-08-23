@@ -14,6 +14,10 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
+  const [recordingWeight, setRecordingWeight] = useState(false)
+  const [weightRecorded, setWeightRecorded] = useState(false)
+  const [weightRecordError, setWeightRecordError] = useState('')
+
   useEffect(() => {
     async function loadProfile() {
       const { data, error } = await supabase
@@ -66,6 +70,31 @@ export default function ProfilePage() {
     setSaved(true)
   }
 
+  async function handleRecordWeight() {
+    if (weightKg === '') {
+      setWeightRecordError('体重を入力してください')
+      return
+    }
+
+    setRecordingWeight(true)
+    setWeightRecorded(false)
+    setWeightRecordError('')
+
+    const { error } = await supabase.from('weight_records').insert({
+      weight_kg: Number(weightKg),
+      recorded_at: new Date().toISOString(),
+    })
+
+    setRecordingWeight(false)
+
+    if (error) {
+      setWeightRecordError('記録に失敗しました。もう一度お試しください')
+      return
+    }
+
+    setWeightRecorded(true)
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50">
@@ -110,6 +139,28 @@ export default function ProfilePage() {
               className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
             />
           </label>
+
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={handleRecordWeight}
+              disabled={recordingWeight}
+              className="rounded-xl border border-zinc-300 py-3 text-base font-medium text-zinc-900 transition-colors disabled:opacity-50"
+            >
+              {recordingWeight ? '記録中...' : '今日の体重を記録する'}
+            </button>
+
+            {weightRecorded && (
+              <p className="text-center text-sm font-medium text-green-600">
+                記録しました
+              </p>
+            )}
+            {weightRecordError && (
+              <p className="text-center text-sm font-medium text-red-600">
+                {weightRecordError}
+              </p>
+            )}
+          </div>
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium text-zinc-700">目標体重 (kg)</span>
