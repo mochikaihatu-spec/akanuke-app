@@ -5,6 +5,8 @@ create table if not exists profile (
   height_cm numeric(5,1),
   weight_kg numeric(5,1),
   target_weight_kg numeric(5,1),
+  target_calories integer,
+  target_protein_g numeric(5,1),
   updated_at timestamptz not null default now(),
   constraint profile_single_row check (id = 1)
 );
@@ -17,9 +19,10 @@ on conflict (id) do nothing;
 create table if not exists meal_records (
   id bigint generated always as identity primary key,
   eaten_at timestamptz not null default now(),
-  meal_type text not null check (meal_type in ('breakfast', 'lunch', 'dinner', 'snack')),
+  meal_type text check (meal_type in ('breakfast', 'lunch', 'dinner', 'snack')),
   description text not null,
   calories integer,
+  protein_g numeric(5,1),
   created_at timestamptz not null default now()
 );
 

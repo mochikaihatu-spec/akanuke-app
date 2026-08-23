@@ -7,6 +7,8 @@ export default function ProfilePage() {
   const [heightCm, setHeightCm] = useState('')
   const [weightKg, setWeightKg] = useState('')
   const [targetWeightKg, setTargetWeightKg] = useState('')
+  const [targetCalories, setTargetCalories] = useState('')
+  const [targetProteinG, setTargetProteinG] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -24,6 +26,8 @@ export default function ProfilePage() {
         setHeightCm(data.height_cm?.toString() ?? '')
         setWeightKg(data.weight_kg?.toString() ?? '')
         setTargetWeightKg(data.target_weight_kg?.toString() ?? '')
+        setTargetCalories(data.target_calories?.toString() ?? '')
+        setTargetProteinG(data.target_protein_g?.toString() ?? '')
       }
       if (error) {
         setError('プロフィールの読み込みに失敗しました')
@@ -46,6 +50,8 @@ export default function ProfilePage() {
         height_cm: heightCm === '' ? null : Number(heightCm),
         weight_kg: weightKg === '' ? null : Number(weightKg),
         target_weight_kg: targetWeightKg === '' ? null : Number(targetWeightKg),
+        target_calories: targetCalories === '' ? null : Number(targetCalories),
+        target_protein_g: targetProteinG === '' ? null : Number(targetProteinG),
         updated_at: new Date().toISOString(),
       })
       .eq('id', 1)
@@ -114,6 +120,31 @@ export default function ProfilePage() {
               value={targetWeightKg}
               onChange={(e) => setTargetWeightKg(e.target.value)}
               placeholder="例: 55.0"
+              className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-zinc-700">目標カロリー (kcal/日)</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={targetCalories}
+              onChange={(e) => setTargetCalories(e.target.value)}
+              placeholder="例: 1800"
+              className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-zinc-700">目標タンパク質量 (g/日)</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.1"
+              value={targetProteinG}
+              onChange={(e) => setTargetProteinG(e.target.value)}
+              placeholder="例: 90"
               className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
             />
           </label>
