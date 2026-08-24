@@ -169,6 +169,12 @@ export default function HomePage() {
           >
             体重を記録する
           </Link>
+          <Link
+            href="/chat"
+            className="rounded-xl border border-zinc-300 py-3 text-center text-base font-medium text-zinc-900 transition-colors"
+          >
+            AIに相談する
+          </Link>
         </div>
       </div>
     </div>
