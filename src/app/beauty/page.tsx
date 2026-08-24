@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import FaceDiagram, { type FacePart } from '@/components/FaceDiagram'
 
-const CATEGORIES = ['肌', '髪型', '体型', '姿勢', '服装']
+const CATEGORIES = ['肌', '眉', '髪型', '輪郭', '体型', '姿勢', '服装']
 
 type Consultation = {
   id: number
@@ -21,6 +22,9 @@ export default function BeautyPage() {
 
   const [history, setHistory] = useState<Consultation[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
+
+  const [activePart, setActivePart] = useState<FacePart | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
 
   async function loadHistory() {
     const { data, error } = await supabase
@@ -43,6 +47,16 @@ export default function BeautyPage() {
         ? prev.filter((c) => c !== category)
         : [...prev, category]
     )
+  }
+
+  function getLatestForPart(part: FacePart) {
+    return history.find((item) => item.categories.includes(part)) ?? null
+  }
+
+  function handleConsultFromDiagram(part: FacePart) {
+    setSelectedCategories([part])
+    setActivePart(null)
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -100,7 +114,63 @@ export default function BeautyPage() {
           美容・垢抜け相談
         </h1>
 
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <FaceDiagram activePart={activePart} onTapPart={setActivePart} />
+
+          {activePart && (
+            <div className="mt-4 rounded-xl bg-zinc-50 p-4">
+              <p className="mb-2 text-sm font-semibold text-zinc-900">
+                {activePart}について
+              </p>
+
+              {(() => {
+                if (loadingHistory) {
+                  return <p className="text-sm text-zinc-500">読み込み中...</p>
+                }
+
+                const latest = getLatestForPart(activePart)
+
+                if (!latest) {
+                  return (
+                    <div className="flex flex-col gap-3">
+                      <p className="text-sm text-zinc-500">まだ相談していません</p>
+                      <button
+                        type="button"
+                        onClick={() => handleConsultFromDiagram(activePart)}
+                        className="rounded-xl bg-zinc-900 py-2 text-sm font-medium text-white transition-colors"
+                      >
+                        相談する
+                      </button>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs text-zinc-400">
+                      {new Date(latest.created_at).toLocaleDateString('ja-JP', {
+                        month: 'numeric',
+                        day: 'numeric',
+                      })}
+                      の相談
+                    </span>
+                    {latest.concern && (
+                      <p className="text-sm text-zinc-600">
+                        気になる点: {latest.concern}
+                      </p>
+                    )}
+                    <p className="whitespace-pre-wrap rounded-xl bg-white p-3 text-sm text-zinc-900">
+                      {latest.answer}
+                    </p>
+                  </div>
+                )
+              })()}
+            </div>
+          )}
+        </div>
+
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm"
         >
