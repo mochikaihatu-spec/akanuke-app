@@ -8,6 +8,7 @@ const TABS = [
   { href: '/profile', label: 'プロフィール', icon: '👤' },
   { href: '/meals', label: '食事記録', icon: '🍽️' },
   { href: '/weight', label: '体重', icon: '⚖️' },
+  { href: '/beauty', label: '美容', icon: '✨' },
 ]
 
 export default function BottomNav() {

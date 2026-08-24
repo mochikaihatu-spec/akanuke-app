@@ -34,10 +34,20 @@ create table if not exists weight_records (
   created_at timestamptz not null default now()
 );
 
+-- 美容・垢抜け相談の履歴
+create table if not exists beauty_consultations (
+  id bigint generated always as identity primary key,
+  categories text[] not null,
+  concern text,
+  answer text not null,
+  created_at timestamptz not null default now()
+);
+
 -- RLS: ログイン機能がないので、anon キーからの読み書きをすべて許可する
 alter table profile enable row level security;
 alter table meal_records enable row level security;
 alter table weight_records enable row level security;
+alter table beauty_consultations enable row level security;
 
 create policy "allow all on profile" on profile
   for all using (true) with check (true);
@@ -46,4 +56,7 @@ create policy "allow all on meal_records" on meal_records
   for all using (true) with check (true);
 
 create policy "allow all on weight_records" on weight_records
+  for all using (true) with check (true);
+
+create policy "allow all on beauty_consultations" on beauty_consultations
   for all using (true) with check (true);
