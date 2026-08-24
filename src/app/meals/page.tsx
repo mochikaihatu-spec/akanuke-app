@@ -11,6 +11,29 @@ type MealRecord = {
   eaten_at: string
 }
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      resolve(result.split(',')[1] ?? '')
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+async function uploadMealPhoto(file: File) {
+  const ext = file.name.split('.').pop() || 'jpg'
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+  const { error } = await supabase.storage.from('meal-photos').upload(path, file)
+  if (error) throw error
+
+  const { data } = supabase.storage.from('meal-photos').getPublicUrl(path)
+  return data.publicUrl
+}
+
 export default function MealsPage() {
   const [foodName, setFoodName] = useState('')
   const [calories, setCalories] = useState('')
@@ -22,6 +45,16 @@ export default function MealsPage() {
   const [targetCalories, setTargetCalories] = useState<number | null>(null)
   const [targetProteinG, setTargetProteinG] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [draftMode, setDraftMode] = useState(false)
+  const [draftName, setDraftName] = useState('')
+  const [draftCalories, setDraftCalories] = useState('')
+  const [draftProteinG, setDraftProteinG] = useState('')
+  const [draftPhotoUrl, setDraftPhotoUrl] = useState<string | null>(null)
+  const [savingPhoto, setSavingPhoto] = useState(false)
+  const [photoError, setPhotoError] = useState('')
 
   const loadData = useCallback(async () => {
     const now = new Date()
@@ -83,6 +116,84 @@ export default function MealsPage() {
     await loadData()
   }
 
+  function resetPhotoState() {
+    setDraftMode(false)
+    setDraftName('')
+    setDraftCalories('')
+    setDraftProteinG('')
+    setDraftPhotoUrl(null)
+    setPhotoPreviewUrl(null)
+    setPhotoError('')
+  }
+
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    setPhotoError('')
+    setAnalyzing(true)
+    setPhotoPreviewUrl(URL.createObjectURL(file))
+
+    try {
+      const base64 = await fileToBase64(file)
+
+      const [uploadedUrl, analysis] = await Promise.all([
+        uploadMealPhoto(file),
+        fetch('/api/analyze-meal-photo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64, mediaType: file.type }),
+        }).then(async (res) => {
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error ?? '解析に失敗しました')
+          return data
+        }),
+      ])
+
+      setDraftPhotoUrl(uploadedUrl)
+      setDraftName(analysis.name ?? '')
+      setDraftCalories(analysis.calories !== null ? String(analysis.calories) : '')
+      setDraftProteinG(
+        analysis.protein_g !== null ? String(analysis.protein_g) : ''
+      )
+      setDraftMode(true)
+    } catch {
+      setPhotoError('写真の解析に失敗しました。もう一度お試しください')
+      setPhotoPreviewUrl(null)
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  async function handleConfirmPhotoMeal() {
+    if (draftName.trim() === '') {
+      setPhotoError('食品名を入力してください')
+      return
+    }
+
+    setSavingPhoto(true)
+    setPhotoError('')
+
+    const { error } = await supabase.from('meal_records').insert({
+      description: draftName.trim(),
+      calories: draftCalories === '' ? null : Number(draftCalories),
+      protein_g: draftProteinG === '' ? null : Number(draftProteinG),
+      photo_url: draftPhotoUrl,
+      eaten_at: new Date().toISOString(),
+    })
+
+    setSavingPhoto(false)
+
+    if (error) {
+      setPhotoError('記録に失敗しました。もう一度お試しください')
+      return
+    }
+
+    resetPhotoState()
+    await loadData()
+  }
+
   const totalCalories = meals.reduce((sum, m) => sum + Number(m.calories ?? 0), 0)
   const totalProtein = meals.reduce((sum, m) => sum + Number(m.protein_g ?? 0), 0)
 
@@ -105,6 +216,117 @@ export default function MealsPage() {
         <h1 className="mb-6 text-center text-xl font-semibold text-zinc-900">
           食事記録
         </h1>
+
+        <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-base font-semibold text-zinc-900">
+            写真から記録
+          </h2>
+
+          {!draftMode ? (
+            <div className="flex flex-col items-center gap-3">
+              {photoPreviewUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoPreviewUrl}
+                  alt="選択した写真"
+                  className="h-40 w-40 rounded-xl object-cover"
+                />
+              )}
+              <label className="w-full cursor-pointer rounded-xl border border-zinc-300 py-3 text-center text-base font-medium text-zinc-900 transition-colors">
+                {analyzing ? '解析中...' : '写真から記録する'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoSelect}
+                  disabled={analyzing}
+                  className="hidden"
+                />
+              </label>
+              {photoError && (
+                <p className="text-center text-sm font-medium text-red-600">
+                  {photoError}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {photoPreviewUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoPreviewUrl}
+                  alt="選択した写真"
+                  className="mx-auto h-40 w-40 rounded-xl object-cover"
+                />
+              )}
+
+              <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
+                AIの推定です。内容を確認・修正してから記録してください
+              </p>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-zinc-700">食品名</span>
+                <input
+                  type="text"
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-zinc-700">
+                  カロリー (kcal)
+                </span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={draftCalories}
+                  onChange={(e) => setDraftCalories(e.target.value)}
+                  className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-zinc-700">
+                  タンパク質量 (g)
+                </span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  value={draftProteinG}
+                  onChange={(e) => setDraftProteinG(e.target.value)}
+                  className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+                />
+              </label>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={resetPhotoState}
+                  className="flex-1 rounded-xl border border-zinc-300 py-3 text-base font-medium text-zinc-900 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmPhotoMeal}
+                  disabled={savingPhoto}
+                  className="flex-1 rounded-xl bg-zinc-900 py-3 text-base font-medium text-white transition-colors disabled:opacity-50"
+                >
+                  {savingPhoto ? '記録中...' : 'この内容で記録する'}
+                </button>
+              </div>
+
+              {photoError && (
+                <p className="text-center text-sm font-medium text-red-600">
+                  {photoError}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
 
         <form
           onSubmit={handleSubmit}

@@ -23,6 +23,7 @@ create table if not exists meal_records (
   description text not null,
   calories integer,
   protein_g numeric(5,1),
+  photo_url text,
   created_at timestamptz not null default now()
 );
 
@@ -60,3 +61,13 @@ create policy "allow all on weight_records" on weight_records
 
 create policy "allow all on beauty_consultations" on beauty_consultations
   for all using (true) with check (true);
+
+-- 写真保存用のストレージバケット
+insert into storage.buckets (id, name, public)
+values ('meal-photos', 'meal-photos', true)
+on conflict (id) do nothing;
+
+create policy "allow all on meal-photos objects"
+on storage.objects for all
+using (bucket_id = 'meal-photos')
+with check (bucket_id = 'meal-photos');
