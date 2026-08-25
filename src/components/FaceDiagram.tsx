@@ -3,139 +3,67 @@
 import { useState } from 'react'
 
 export type FacePart = '肌' | '眉' | '髪型' | '輪郭' | '姿勢'
+export type FaceIllustration = 'male' | 'female'
+
+const IMAGE_SRC: Record<FaceIllustration, string> = {
+  male: '/face-male.jpg',
+  female: '/face-female.jpg',
+}
 
 const PARTS: FacePart[] = ['肌', '眉', '髪型', '輪郭', '姿勢']
 
-const LINE = '#475569'
+// 描画順(後のものほど前面) = 重なった時に優先されるパーツ
+const HOTSPOTS: { part: FacePart; top: string; left: string; width: string; height: string }[] = [
+  { part: '姿勢', top: '68%', left: '0%', width: '100%', height: '32%' },
+  { part: '髪型', top: '0%', left: '10%', width: '80%', height: '34%' },
+  { part: '肌', top: '38%', left: '18%', width: '64%', height: '20%' },
+  { part: '輪郭', top: '50%', left: '12%', width: '76%', height: '20%' },
+  { part: '眉', top: '30%', left: '22%', width: '56%', height: '12%' },
+]
 
 export default function FaceDiagram({
+  illustration,
   activePart,
   onTapPart,
 }: {
+  illustration: FaceIllustration
   activePart: string | null
   onTapPart: (part: FacePart) => void
 }) {
   const [hoveredPart, setHoveredPart] = useState<FacePart | null>(null)
 
   function fillFor(part: FacePart) {
-    if (activePart === part) return 'rgba(225, 29, 72, 0.14)'
-    if (hoveredPart === part) return 'rgba(225, 29, 72, 0.07)'
+    if (activePart === part) return 'rgba(225, 29, 72, 0.22)'
+    if (hoveredPart === part) return 'rgba(225, 29, 72, 0.12)'
     return 'transparent'
   }
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <svg
-        viewBox="0 0 240 320"
-        className="w-full max-w-[220px]"
-        role="img"
-        aria-label="顔のイラスト。パーツをタップすると相談できます"
+      <div
+        className="relative mx-auto w-full max-w-[220px] overflow-hidden rounded-3xl bg-slate-100"
+        style={{ aspectRatio: '3 / 4' }}
       >
-        {/* 肩(姿勢の絵) */}
-        <path
-          d="M30 320 C30 250 70 225 120 225 C170 225 210 250 210 320 Z"
-          fill="#f8fafc"
-          stroke={LINE}
-          strokeWidth="2"
-        />
-        {/* 首 */}
-        <rect x="104" y="185" width="32" height="45" fill="#f8fafc" stroke={LINE} strokeWidth="2" />
-
-        {/* 髪(後ろ側) */}
-        <path
-          d="M60 145 C55 90 80 55 120 55 C160 55 185 90 180 145 C180 120 165 95 120 95 C75 95 60 120 60 145 Z"
-          fill="#f8fafc"
-          stroke={LINE}
-          strokeWidth="2"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={IMAGE_SRC[illustration]}
+          alt="顔のイラスト。パーツをタップすると相談できます"
+          className="absolute inset-0 h-full w-full object-cover object-top"
         />
 
-        {/* 顔(輪郭のベース) */}
-        <ellipse cx="120" cy="150" rx="58" ry="72" fill="#ffffff" stroke={LINE} strokeWidth="2" />
-
-        {/* 眉 */}
-        <path d="M95 128 Q104 121 114 126" fill="none" stroke={LINE} strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M126 126 Q136 121 145 128" fill="none" stroke={LINE} strokeWidth="2.5" strokeLinecap="round" />
-
-        {/* 目 */}
-        <ellipse cx="103" cy="145" rx="5" ry="4" fill={LINE} />
-        <ellipse cx="137" cy="145" rx="5" ry="4" fill={LINE} />
-
-        {/* 鼻・口 */}
-        <path d="M120 150 L117 168 Q120 171 123 168" fill="none" stroke={LINE} strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M107 183 Q120 190 133 183" fill="none" stroke={LINE} strokeWidth="2" strokeLinecap="round" />
-
-        {/* ── タップ領域(透明・少し広め) ── */}
-
-        {/* 髪型 */}
-        <ellipse
-          cx="120"
-          cy="90"
-          rx="66"
-          ry="42"
-          fill={fillFor('髪型')}
-          className="cursor-pointer transition-colors"
-          onMouseEnter={() => setHoveredPart('髪型')}
-          onMouseLeave={() => setHoveredPart(null)}
-          onClick={() => onTapPart('髪型')}
-          role="button"
-          aria-label="髪型について相談する"
-        />
-
-        {/* 眉 */}
-        <rect
-          x="82"
-          y="112"
-          width="76"
-          height="26"
-          rx="13"
-          fill={fillFor('眉')}
-          className="cursor-pointer transition-colors"
-          onMouseEnter={() => setHoveredPart('眉')}
-          onMouseLeave={() => setHoveredPart(null)}
-          onClick={() => onTapPart('眉')}
-          role="button"
-          aria-label="眉について相談する"
-        />
-
-        {/* 肌(頬・鼻まわり) */}
-        <ellipse
-          cx="120"
-          cy="163"
-          rx="48"
-          ry="26"
-          fill={fillFor('肌')}
-          className="cursor-pointer transition-colors"
-          onMouseEnter={() => setHoveredPart('肌')}
-          onMouseLeave={() => setHoveredPart(null)}
-          onClick={() => onTapPart('肌')}
-          role="button"
-          aria-label="肌について相談する"
-        />
-
-        {/* 輪郭(あご・フェイスライン) */}
-        <path
-          d="M64 165 C64 195 85 218 120 220 C155 218 176 195 176 165 C176 190 158 210 120 212 C82 210 64 190 64 165 Z"
-          fill={fillFor('輪郭')}
-          className="cursor-pointer transition-colors"
-          onMouseEnter={() => setHoveredPart('輪郭')}
-          onMouseLeave={() => setHoveredPart(null)}
-          onClick={() => onTapPart('輪郭')}
-          role="button"
-          aria-label="輪郭について相談する"
-        />
-
-        {/* 姿勢(肩まわり) */}
-        <path
-          d="M30 320 C30 250 70 225 120 225 C170 225 210 250 210 320 Z"
-          fill={fillFor('姿勢')}
-          className="cursor-pointer transition-colors"
-          onMouseEnter={() => setHoveredPart('姿勢')}
-          onMouseLeave={() => setHoveredPart(null)}
-          onClick={() => onTapPart('姿勢')}
-          role="button"
-          aria-label="姿勢について相談する"
-        />
-      </svg>
+        {HOTSPOTS.map(({ part, top, left, width, height }) => (
+          <button
+            key={part}
+            type="button"
+            onClick={() => onTapPart(part)}
+            onMouseEnter={() => setHoveredPart(part)}
+            onMouseLeave={() => setHoveredPart(null)}
+            aria-label={`${part}について相談する`}
+            className="absolute cursor-pointer rounded-2xl transition-colors"
+            style={{ top, left, width, height, backgroundColor: fillFor(part) }}
+          />
+        ))}
+      </div>
 
       <p className="text-xs text-slate-400">気になるパーツをタップしてください</p>
 

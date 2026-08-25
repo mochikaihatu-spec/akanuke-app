@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const [targetWeightKg, setTargetWeightKg] = useState('')
   const [targetCalories, setTargetCalories] = useState('')
   const [targetProteinG, setTargetProteinG] = useState('')
+  const [faceIllustration, setFaceIllustration] = useState<'male' | 'female'>('female')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -36,6 +37,9 @@ export default function ProfilePage() {
         setTargetWeightKg(data.target_weight_kg?.toString() ?? '')
         setTargetCalories(data.target_calories?.toString() ?? '')
         setTargetProteinG(data.target_protein_g?.toString() ?? '')
+        if (data.face_illustration === 'male' || data.face_illustration === 'female') {
+          setFaceIllustration(data.face_illustration)
+        }
       }
       if (error) {
         setError('プロフィールの読み込みに失敗しました')
@@ -60,6 +64,7 @@ export default function ProfilePage() {
         target_weight_kg: targetWeightKg === '' ? null : Number(targetWeightKg),
         target_calories: targetCalories === '' ? null : Number(targetCalories),
         target_protein_g: targetProteinG === '' ? null : Number(targetProteinG),
+        face_illustration: faceIllustration,
         updated_at: new Date().toISOString(),
       })
       .eq('id', 1)
@@ -203,6 +208,31 @@ export default function ProfilePage() {
               className={inputClass}
             />
           </label>
+
+          <div className="flex flex-col gap-2">
+            <span className={labelClass}>美容相談で表示するイラスト</span>
+            <div className="flex gap-2">
+              {(
+                [
+                  { value: 'female' as const, label: '女性用' },
+                  { value: 'male' as const, label: '男性用' },
+                ]
+              ).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFaceIllustration(option.value)}
+                  className={`flex-1 rounded-xl border py-3 text-sm font-medium transition-colors ${
+                    faceIllustration === option.value
+                      ? 'border-blue-200 bg-blue-50 text-blue-700'
+                      : 'border-slate-200 text-slate-600'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <button
             type="submit"

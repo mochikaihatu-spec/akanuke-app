@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import FaceDiagram, { type FacePart } from '@/components/FaceDiagram'
+import FaceDiagram, { type FaceIllustration, type FacePart } from '@/components/FaceDiagram'
 
 const CATEGORIES = ['肌', '眉', '髪型', '輪郭', '体型', '姿勢', '服装']
 
@@ -29,6 +29,8 @@ export default function BeautyPage() {
   const [activePart, setActivePart] = useState<FacePart | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
+  const [illustration, setIllustration] = useState<FaceIllustration>('female')
+
   async function loadHistory() {
     const { data, error } = await supabase
       .from('beauty_consultations')
@@ -42,6 +44,17 @@ export default function BeautyPage() {
 
   useEffect(() => {
     loadHistory()
+
+    supabase
+      .from('profile')
+      .select('face_illustration')
+      .eq('id', 1)
+      .single()
+      .then(({ data }) => {
+        if (data?.face_illustration === 'male' || data?.face_illustration === 'female') {
+          setIllustration(data.face_illustration)
+        }
+      })
   }, [])
 
   function toggleCategory(category: string) {
@@ -118,7 +131,11 @@ export default function BeautyPage() {
         </h1>
 
         <div className={cardClass}>
-          <FaceDiagram activePart={activePart} onTapPart={setActivePart} />
+          <FaceDiagram
+            illustration={illustration}
+            activePart={activePart}
+            onTapPart={setActivePart}
+          />
 
           {activePart && (
             <div className="mt-4 rounded-2xl bg-slate-50 p-4">

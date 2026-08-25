@@ -7,6 +7,7 @@ create table if not exists profile (
   target_weight_kg numeric(5,1),
   target_calories integer,
   target_protein_g numeric(5,1),
+  face_illustration text default 'female' check (face_illustration in ('male', 'female')),
   updated_at timestamptz not null default now(),
   constraint profile_single_row check (id = 1)
 );
