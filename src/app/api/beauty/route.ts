@@ -15,15 +15,25 @@ export async function POST(request: Request) {
     )
   }
 
-  const systemPrompt = `あなたは美容・垢抜けに関する相談に乗るアシスタントです。ユーザーが選んだカテゴリと気になる点をもとに、日本語でアドバイスしてください。
+  const systemPrompt = `あなたは美容・垢抜けに関する相談に乗るアシスタントです。ユーザーが選んだ気になる部分や、なりたい印象・気になる点をもとに、日本語で具体的な行動につながるアドバイスをしてください。
 
 必ず守ること:
 - 整形やコンプレックスを否定するような回答は避けてください
 - バランスや顔立ち・体型に合った「似合わせ」の視点でアドバイスしてください
-- 常に前向きなトーンで、具体的で実践しやすい提案を心がけてください`
+- 常に前向きなトーンで、具体的で実践しやすい提案を心がけてください
 
-  const userMessage = `相談カテゴリ: ${categories.join('、')}
-${concern ? `気になる点: ${concern}` : '(気になる点の記入なし)'}`
+必ず次のJSON形式のみで回答してください。説明文や前置きは一切書かないでください。
+{
+  "title": "プラン全体の見出し(例: あなたの垢抜けプラン)",
+  "items": [
+    { "part": "対象(例: 眉、髪、肌など。選ばれたカテゴリの中から)", "advice": "具体的なアドバイスを1〜2文で" }
+  ],
+  "weeklyTasks": ["今週やることを体言止めで2〜4個"]
+}
+items は2〜4件にしてください。`
+
+  const userMessage = `気になる部分: ${categories.join('、')}
+${concern ? concern : '(詳細の記入なし)'}`
 
   try {
     const message = await anthropic.messages.create({
@@ -34,7 +44,10 @@ ${concern ? `気になる点: ${concern}` : '(気になる点の記入なし)'}`
     })
 
     const textBlock = message.content.find((block) => block.type === 'text')
-    const answer = textBlock && 'text' in textBlock ? textBlock.text : ''
+    const rawText = textBlock && 'text' in textBlock ? textBlock.text : ''
+
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/)
+    const answer = jsonMatch ? jsonMatch[0] : rawText
 
     return NextResponse.json({ answer })
   } catch (error) {
