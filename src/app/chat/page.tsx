@@ -81,15 +81,15 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex min-h-screen justify-center bg-zinc-50 px-4 py-10">
+    <div className="flex min-h-screen justify-center bg-slate-50 px-4 py-10">
       <div className="flex w-full max-w-sm flex-col gap-4">
-        <h1 className="text-center text-xl font-semibold text-zinc-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
           食事のAI相談
         </h1>
 
-        <div className="flex min-h-[50vh] flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm">
+        <div className="flex min-h-[50vh] flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
           {messages.length === 0 ? (
-            <p className="m-auto max-w-[80%] text-center text-sm text-zinc-400">
+            <p className="m-auto max-w-[80%] text-center text-sm text-slate-400">
               今日の食事や栄養について、なんでも聞いてみましょう
               <br />
               例:「今日あとどれくらいタンパク質摂ればいい?」
@@ -105,8 +105,8 @@ export default function ChatPage() {
                 <div
                   className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${
                     message.role === 'user'
-                      ? 'bg-zinc-900 text-white'
-                      : 'bg-zinc-100 text-zinc-900'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-900'
                   }`}
                 >
                   {message.content}
@@ -117,7 +117,7 @@ export default function ChatPage() {
 
           {sending && (
             <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-2xl bg-zinc-100 px-4 py-2 text-sm text-zinc-400">
+              <div className="max-w-[80%] rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-400">
                 考え中...
               </div>
             </div>
@@ -134,12 +134,12 @@ export default function ChatPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="質問を入力"
-            className="flex-1 rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+            className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
           />
           <button
             type="submit"
             disabled={sending || input.trim() === ''}
-            className="rounded-xl bg-zinc-900 px-5 py-3 text-base font-medium text-white transition-colors disabled:opacity-50"
+            className="rounded-xl bg-blue-600 px-5 py-3 text-base font-medium text-white transition-colors disabled:opacity-50"
           >
             送信
           </button>

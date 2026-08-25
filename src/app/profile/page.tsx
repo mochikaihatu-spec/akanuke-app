@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+const inputClass =
+  'rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100'
+const labelClass = 'text-sm font-medium text-slate-600'
+
 export default function ProfilePage() {
   const [heightCm, setHeightCm] = useState('')
   const [weightKg, setWeightKg] = useState('')
@@ -97,25 +101,25 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <p className="text-zinc-500">読み込み中...</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-slate-400">読み込み中...</p>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen justify-center bg-zinc-50 px-4 py-10">
+    <div className="flex min-h-screen justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-sm">
-        <h1 className="mb-6 text-center text-xl font-semibold text-zinc-900">
+        <h1 className="mb-6 text-2xl font-semibold tracking-tight text-slate-900">
           プロフィール
         </h1>
 
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-sm"
+          className="flex flex-col gap-5 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm"
         >
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-zinc-700">身長 (cm)</span>
+            <span className={labelClass}>身長 (cm)</span>
             <input
               type="number"
               inputMode="decimal"
@@ -123,12 +127,12 @@ export default function ProfilePage() {
               value={heightCm}
               onChange={(e) => setHeightCm(e.target.value)}
               placeholder="例: 165.0"
-              className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+              className={inputClass}
             />
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-zinc-700">現在の体重 (kg)</span>
+            <span className={labelClass}>現在の体重 (kg)</span>
             <input
               type="number"
               inputMode="decimal"
@@ -136,7 +140,7 @@ export default function ProfilePage() {
               value={weightKg}
               onChange={(e) => setWeightKg(e.target.value)}
               placeholder="例: 60.0"
-              className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+              className={inputClass}
             />
           </label>
 
@@ -145,7 +149,7 @@ export default function ProfilePage() {
               type="button"
               onClick={handleRecordWeight}
               disabled={recordingWeight}
-              className="rounded-xl border border-zinc-300 py-3 text-base font-medium text-zinc-900 transition-colors disabled:opacity-50"
+              className="rounded-xl border border-slate-200 py-3 text-base font-medium text-slate-700 transition-colors disabled:opacity-50"
             >
               {recordingWeight ? '記録中...' : '今日の体重を記録する'}
             </button>
@@ -163,7 +167,7 @@ export default function ProfilePage() {
           </div>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-zinc-700">目標体重 (kg)</span>
+            <span className={labelClass}>目標体重 (kg)</span>
             <input
               type="number"
               inputMode="decimal"
@@ -171,24 +175,24 @@ export default function ProfilePage() {
               value={targetWeightKg}
               onChange={(e) => setTargetWeightKg(e.target.value)}
               placeholder="例: 55.0"
-              className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+              className={inputClass}
             />
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-zinc-700">目標カロリー (kcal/日)</span>
+            <span className={labelClass}>目標カロリー (kcal/日)</span>
             <input
               type="number"
               inputMode="numeric"
               value={targetCalories}
               onChange={(e) => setTargetCalories(e.target.value)}
               placeholder="例: 1800"
-              className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+              className={inputClass}
             />
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-zinc-700">目標タンパク質量 (g/日)</span>
+            <span className={labelClass}>目標タンパク質量 (g/日)</span>
             <input
               type="number"
               inputMode="decimal"
@@ -196,14 +200,14 @@ export default function ProfilePage() {
               value={targetProteinG}
               onChange={(e) => setTargetProteinG(e.target.value)}
               placeholder="例: 90"
-              className="rounded-xl border border-zinc-300 px-4 py-3 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none"
+              className={inputClass}
             />
           </label>
 
           <button
             type="submit"
             disabled={saving}
-            className="mt-2 rounded-xl bg-zinc-900 py-3 text-base font-medium text-white transition-colors disabled:opacity-50"
+            className="mt-2 rounded-xl bg-blue-600 py-3 text-base font-medium text-white transition-colors disabled:opacity-50"
           >
             {saving ? '保存中...' : '保存する'}
           </button>

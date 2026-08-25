@@ -6,6 +6,8 @@ export type FacePart = '肌' | '眉' | '髪型' | '輪郭' | '姿勢'
 
 const PARTS: FacePart[] = ['肌', '眉', '髪型', '輪郭', '姿勢']
 
+const LINE = '#475569'
+
 export default function FaceDiagram({
   activePart,
   onTapPart,
@@ -16,8 +18,8 @@ export default function FaceDiagram({
   const [hoveredPart, setHoveredPart] = useState<FacePart | null>(null)
 
   function fillFor(part: FacePart) {
-    if (activePart === part) return 'rgba(24, 24, 27, 0.18)'
-    if (hoveredPart === part) return 'rgba(24, 24, 27, 0.1)'
+    if (activePart === part) return 'rgba(225, 29, 72, 0.14)'
+    if (hoveredPart === part) return 'rgba(225, 29, 72, 0.07)'
     return 'transparent'
   }
 
@@ -32,35 +34,35 @@ export default function FaceDiagram({
         {/* 肩(姿勢の絵) */}
         <path
           d="M30 320 C30 250 70 225 120 225 C170 225 210 250 210 320 Z"
-          fill="#fafafa"
-          stroke="#18181b"
+          fill="#f8fafc"
+          stroke={LINE}
           strokeWidth="2"
         />
         {/* 首 */}
-        <rect x="104" y="185" width="32" height="45" fill="#fafafa" stroke="#18181b" strokeWidth="2" />
+        <rect x="104" y="185" width="32" height="45" fill="#f8fafc" stroke={LINE} strokeWidth="2" />
 
         {/* 髪(後ろ側) */}
         <path
           d="M60 145 C55 90 80 55 120 55 C160 55 185 90 180 145 C180 120 165 95 120 95 C75 95 60 120 60 145 Z"
-          fill="#fafafa"
-          stroke="#18181b"
+          fill="#f8fafc"
+          stroke={LINE}
           strokeWidth="2"
         />
 
         {/* 顔(輪郭のベース) */}
-        <ellipse cx="120" cy="150" rx="58" ry="72" fill="#fffdf8" stroke="#18181b" strokeWidth="2" />
+        <ellipse cx="120" cy="150" rx="58" ry="72" fill="#ffffff" stroke={LINE} strokeWidth="2" />
 
         {/* 眉 */}
-        <path d="M95 128 Q104 121 114 126" fill="none" stroke="#18181b" strokeWidth="2.5" strokeLinecap="round" />
-        <path d="M126 126 Q136 121 145 128" fill="none" stroke="#18181b" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M95 128 Q104 121 114 126" fill="none" stroke={LINE} strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M126 126 Q136 121 145 128" fill="none" stroke={LINE} strokeWidth="2.5" strokeLinecap="round" />
 
         {/* 目 */}
-        <ellipse cx="103" cy="145" rx="5" ry="4" fill="#18181b" />
-        <ellipse cx="137" cy="145" rx="5" ry="4" fill="#18181b" />
+        <ellipse cx="103" cy="145" rx="5" ry="4" fill={LINE} />
+        <ellipse cx="137" cy="145" rx="5" ry="4" fill={LINE} />
 
         {/* 鼻・口 */}
-        <path d="M120 150 L117 168 Q120 171 123 168" fill="none" stroke="#18181b" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M107 183 Q120 190 133 183" fill="none" stroke="#18181b" strokeWidth="2" strokeLinecap="round" />
+        <path d="M120 150 L117 168 Q120 171 123 168" fill="none" stroke={LINE} strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M107 183 Q120 190 133 183" fill="none" stroke={LINE} strokeWidth="2" strokeLinecap="round" />
 
         {/* ── タップ領域(透明・少し広め) ── */}
 
@@ -135,7 +137,7 @@ export default function FaceDiagram({
         />
       </svg>
 
-      <p className="text-xs text-zinc-400">気になるパーツをタップしてください</p>
+      <p className="text-xs text-slate-400">気になるパーツをタップしてください</p>
 
       <div className="flex flex-wrap justify-center gap-2">
         {PARTS.map((part) => (
@@ -145,8 +147,8 @@ export default function FaceDiagram({
             onClick={() => onTapPart(part)}
             className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
               activePart === part
-                ? 'border-zinc-900 bg-zinc-900 text-white'
-                : 'border-zinc-300 text-zinc-500'
+                ? 'border-rose-200 bg-rose-50 text-rose-700'
+                : 'border-slate-200 text-slate-500'
             }`}
           >
             {part}
