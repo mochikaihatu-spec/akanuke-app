@@ -48,12 +48,22 @@ function BeautyIcon() {
   )
 }
 
+function SnsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <path d="M9 8.5v7l6-3.5-6-3.5Z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 const TABS = [
   { href: '/', label: 'ホーム', Icon: HomeIcon },
   { href: '/profile', label: 'プロフィール', Icon: ProfileIcon },
   { href: '/meals', label: '食事記録', Icon: MealsIcon },
   { href: '/weight', label: '体重', Icon: WeightIcon },
   { href: '/beauty', label: '美容', Icon: BeautyIcon },
+  { href: '/sns', label: 'SNS', Icon: SnsIcon },
 ]
 
 export default function BottomNav() {
