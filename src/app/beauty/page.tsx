@@ -117,6 +117,7 @@ type Consultation = {
 }
 
 type Plan = {
+  summary?: string
   title?: string
   items?: { part: string; advice: string }[]
   weeklyTasks?: string[]
@@ -132,47 +133,97 @@ function parsePlan(answer: string): Plan | null {
   }
 }
 
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}
+
 function PlanAnswer({ answer }: { answer: string }) {
+  const [expanded, setExpanded] = useState(false)
   const plan = parsePlan(answer)
 
   if (!plan) {
     return <p className="whitespace-pre-wrap text-sm text-slate-700">{answer}</p>
   }
 
+  const hasDetail =
+    Boolean(plan.title) || (plan.items && plan.items.length > 0) ||
+    (plan.weeklyTasks && plan.weeklyTasks.length > 0)
+
   return (
-    <div className="flex flex-col gap-4">
-      {plan.title && (
-        <p className="text-sm font-semibold text-slate-900">{plan.title}</p>
-      )}
+    <div className="flex flex-col gap-2">
+      <p className="text-sm text-slate-900">{plan.summary ?? plan.title}</p>
 
-      {plan.items && plan.items.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {plan.items.map((item, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-50 text-[11px] font-semibold text-amber-700">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-900">{item.part}</p>
-                <p className="text-sm leading-relaxed text-slate-600">{item.advice}</p>
-              </div>
+      {hasDetail && (
+        <>
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="flex items-center gap-1 self-start text-xs font-medium text-blue-600"
+          >
+            {expanded ? '閉じる' : '詳しく見る'}
+            <ChevronIcon
+              className={`h-3 w-3 transition-transform duration-300 ${
+                expanded ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              expanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            <div className="flex flex-col gap-4 pt-1">
+              {plan.title && (
+                <p className="text-sm font-semibold text-slate-900">{plan.title}</p>
+              )}
+
+              {plan.items && plan.items.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  {plan.items.map((item, i) => (
+                    <div key={i} className="flex gap-3">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-50 text-[11px] font-semibold text-amber-700">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-900">{item.part}</p>
+                        <p className="text-sm leading-relaxed text-slate-600">
+                          {item.advice}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {plan.weeklyTasks && plan.weeklyTasks.length > 0 && (
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="mb-2 text-xs font-semibold text-slate-500">今週やること</p>
+                  <ul className="flex flex-col gap-2">
+                    {plan.weeklyTasks.map((task, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm text-slate-700">
+                        <span className="h-4 w-4 shrink-0 rounded border border-slate-300" />
+                        {task}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
-
-      {plan.weeklyTasks && plan.weeklyTasks.length > 0 && (
-        <div className="rounded-2xl bg-slate-50 p-4">
-          <p className="mb-2 text-xs font-semibold text-slate-500">今週やること</p>
-          <ul className="flex flex-col gap-2">
-            {plan.weeklyTasks.map((task, i) => (
-              <li key={i} className="flex items-center gap-2 text-sm text-slate-700">
-                <span className="h-4 w-4 shrink-0 rounded border border-slate-300" />
-                {task}
-              </li>
-            ))}
-          </ul>
-        </div>
+          </div>
+        </>
       )}
     </div>
   )

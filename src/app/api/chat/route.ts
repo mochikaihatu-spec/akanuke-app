@@ -52,22 +52,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'データの取得に失敗しました' }, { status: 400 })
   }
 
-  const systemPrompt = `あなたはダイエット・食事管理をサポートするアシスタントです。ユーザーの今日の食事記録と目標が以下の通り与えられます。この情報をもとに、質問に簡潔でわかりやすい日本語で答えてください。
+  const systemPrompt = `あなたはダイエット・食事管理をサポートするアシスタントです。ユーザーの今日の食事記録と目標が以下の通り与えられます。この情報をもとに、質問にわかりやすい日本語で答えてください。
 
-${buildSummary(context)}`
+${buildSummary(context)}
+
+必ず次のJSON形式のみで回答してください。説明文や前置きは一切書かないでください。
+{
+  "summary": "回答の要約を1〜2行(40文字程度)で。例: タンパク質があと20g足りません。鶏肉や豆腐を一品足しましょう",
+  "detail": "これまで通りの詳しいアドバイス全文"
+}`
 
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-5',
-      max_tokens: 500,
+      max_tokens: 600,
       system: systemPrompt,
       messages: [{ role: 'user', content: question }],
     })
 
     const textBlock = message.content.find((block) => block.type === 'text')
-    const answer = textBlock && 'text' in textBlock ? textBlock.text : ''
+    const rawText = textBlock && 'text' in textBlock ? textBlock.text : ''
 
-    return NextResponse.json({ answer })
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      throw new Error('AIの応答を解析できませんでした')
+    }
+
+    const parsed = JSON.parse(jsonMatch[0])
+    const summary = typeof parsed.summary === 'string' ? parsed.summary : rawText
+    const detail = typeof parsed.detail === 'string' ? parsed.detail : ''
+
+    return NextResponse.json({ summary, detail })
   } catch (error) {
     console.error('Anthropic API error:', error)
     return NextResponse.json({ error: 'AIとの通信に失敗しました' }, { status: 500 })
