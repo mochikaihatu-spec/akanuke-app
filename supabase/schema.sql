@@ -57,12 +57,20 @@ create table if not exists workout_records (
   created_at timestamptz not null default now()
 );
 
+-- 「今日のToDo」のキャッシュ(1日1回だけAIに生成させ、その日はこの結果を使い回す)
+create table if not exists daily_todos (
+  todo_date date primary key,
+  items jsonb not null,
+  created_at timestamptz not null default now()
+);
+
 -- RLS: ログイン機能がないので、anon キーからの読み書きをすべて許可する
 alter table profile enable row level security;
 alter table meal_records enable row level security;
 alter table weight_records enable row level security;
 alter table beauty_consultations enable row level security;
 alter table workout_records enable row level security;
+alter table daily_todos enable row level security;
 
 create policy "allow all on profile" on profile
   for all using (true) with check (true);
@@ -77,6 +85,9 @@ create policy "allow all on beauty_consultations" on beauty_consultations
   for all using (true) with check (true);
 
 create policy "allow all on workout_records" on workout_records
+  for all using (true) with check (true);
+
+create policy "allow all on daily_todos" on daily_todos
   for all using (true) with check (true);
 
 -- 写真保存用のストレージバケット

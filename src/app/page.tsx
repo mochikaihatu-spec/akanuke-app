@@ -19,6 +19,9 @@ export default function HomePage() {
   const [useWorkout, setUseWorkout] = useState(false)
   const [useBeauty, setUseBeauty] = useState(false)
   const [latestBeautyCategories, setLatestBeautyCategories] = useState<string[] | null>(null)
+  const [todos, setTodos] = useState<string[]>([])
+  const [todosLoading, setTodosLoading] = useState(true)
+  const [todosError, setTodosError] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -53,40 +56,43 @@ export default function HomePage() {
           .lt('created_at', endOfDay.toISOString()),
         supabase
           .from('workout_records')
-          .select('exercise_name')
+          .select('exercise_name, created_at')
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
         supabase
           .from('beauty_consultations')
-          .select('categories')
+          .select('categories, concern, created_at')
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
       ])
 
-      if (mealsResult.data) {
-        setTotalCalories(
-          mealsResult.data.reduce((sum, m) => sum + Number(m.calories ?? 0), 0)
-        )
-        setTotalProtein(
-          mealsResult.data.reduce((sum, m) => sum + Number(m.protein_g ?? 0), 0)
-        )
-      }
-      if (profileResult.data) {
-        const p = profileResult.data
+      const totalCaloriesValue = (mealsResult.data ?? []).reduce(
+        (sum, m) => sum + Number(m.calories ?? 0),
+        0
+      )
+      const totalProteinValue = (mealsResult.data ?? []).reduce(
+        (sum, m) => sum + Number(m.protein_g ?? 0),
+        0
+      )
+      setTotalCalories(totalCaloriesValue)
+      setTotalProtein(totalProteinValue)
+
+      const p = profileResult.data
+      const targetCaloriesValue = p?.target_calories ?? null
+      const targetProteinGValue = p?.target_protein_g ?? null
+      const targetWeightKgValue = p?.target_weight_kg ?? null
+      const useWorkoutValue = Boolean(p?.use_workout)
+      const useBeautyValue = Boolean(p?.use_beauty)
+
+      if (p) {
         setWeightKg(p.weight_kg === null ? null : Number(p.weight_kg))
-        setTargetWeightKg(
-          p.target_weight_kg === null ? null : Number(p.target_weight_kg)
-        )
-        setTargetCalories(
-          p.target_calories === null ? null : Number(p.target_calories)
-        )
-        setTargetProteinG(
-          p.target_protein_g === null ? null : Number(p.target_protein_g)
-        )
-        setUseWorkout(Boolean(p.use_workout))
-        setUseBeauty(Boolean(p.use_beauty))
+        setTargetWeightKg(targetWeightKgValue === null ? null : Number(targetWeightKgValue))
+        setTargetCalories(targetCaloriesValue === null ? null : Number(targetCaloriesValue))
+        setTargetProteinG(targetProteinGValue === null ? null : Number(targetProteinGValue))
+        setUseWorkout(useWorkoutValue)
+        setUseBeauty(useBeautyValue)
       }
       if (workoutsTodayResult.data) {
         setWorkoutCountToday(workoutsTodayResult.data.length)
@@ -106,6 +112,97 @@ export default function HomePage() {
         setError('データの読み込みに失敗しました')
       }
       setLoading(false)
+
+      await loadTodos({
+        todayDateStr: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
+        profile: {
+          targetWeightKg: targetWeightKgValue,
+          currentWeightKg: p?.weight_kg ?? null,
+          targetCalories: targetCaloriesValue,
+          targetProteinG: targetProteinGValue,
+        },
+        today: {
+          totalCalories: totalCaloriesValue,
+          totalProtein: totalProteinValue,
+          remainingCalories:
+            targetCaloriesValue !== null ? targetCaloriesValue - totalCaloriesValue : null,
+          remainingProtein:
+            targetProteinGValue !== null ? targetProteinGValue - totalProteinValue : null,
+        },
+        workout:
+          useWorkoutValue && lastWorkoutResult.data
+            ? {
+                lastExerciseName: lastWorkoutResult.data.exercise_name,
+                daysSinceLast: Math.floor(
+                  (now.getTime() - new Date(lastWorkoutResult.data.created_at).getTime()) /
+                    86400000
+                ),
+              }
+            : useWorkoutValue
+              ? { lastExerciseName: null, daysSinceLast: null }
+              : null,
+        beauty:
+          useBeautyValue && lastBeautyResult.data
+            ? {
+                categories: lastBeautyResult.data.categories,
+                concern: lastBeautyResult.data.concern,
+              }
+            : useBeautyValue
+              ? { categories: null, concern: null }
+              : null,
+      })
+    }
+
+    async function loadTodos(context: {
+      todayDateStr: string
+      profile: unknown
+      today: unknown
+      workout: unknown
+      beauty: unknown
+    }) {
+      setTodosLoading(true)
+      setTodosError('')
+
+      const { data: cached } = await supabase
+        .from('daily_todos')
+        .select('items')
+        .eq('todo_date', context.todayDateStr)
+        .maybeSingle()
+
+      if (cached) {
+        setTodos(cached.items as string[])
+        setTodosLoading(false)
+        return
+      }
+
+      try {
+        const res = await fetch('/api/todos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            context: {
+              profile: context.profile,
+              today: context.today,
+              workout: context.workout,
+              beauty: context.beauty,
+            },
+          }),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) throw new Error(data.error ?? 'ToDoの生成に失敗しました')
+
+        setTodos(data.items)
+
+        await supabase
+          .from('daily_todos')
+          .upsert({ todo_date: context.todayDateStr, items: data.items })
+      } catch {
+        setTodosError('ToDoの取得に失敗しました')
+      } finally {
+        setTodosLoading(false)
+      }
     }
 
     loadData()
@@ -148,6 +245,34 @@ export default function HomePage() {
         {error && (
           <p className="text-center text-sm font-medium text-red-600">{error}</p>
         )}
+
+        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-500">今日のToDo</p>
+            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-medium text-blue-600">
+              AI提案
+            </span>
+          </div>
+
+          {todosLoading ? (
+            <p className="mt-3 text-sm text-slate-400">考え中...</p>
+          ) : todosError ? (
+            <p className="mt-3 text-sm text-red-600">{todosError}</p>
+          ) : todos.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-400">
+              今日はこれといってやることはなさそうです
+            </p>
+          ) : (
+            <ul className="mt-3 flex flex-col gap-2.5">
+              {todos.map((todo, index) => (
+                <li key={index} className="flex items-start gap-2.5 text-sm text-slate-900">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />
+                  <span className="leading-relaxed">{todo}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-slate-500">
