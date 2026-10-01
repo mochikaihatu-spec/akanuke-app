@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import Toggle from '@/components/Toggle'
+
+function broadcastFeatureFlag(key: 'use_workout' | 'use_beauty', value: boolean) {
+  window.dispatchEvent(
+    new CustomEvent('akanuke:feature-flags-changed', { detail: { key, value } })
+  )
+}
 
 const inputClass =
   'rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100'
@@ -14,6 +21,9 @@ export default function ProfilePage() {
   const [targetCalories, setTargetCalories] = useState('')
   const [targetProteinG, setTargetProteinG] = useState('')
   const [faceIllustration, setFaceIllustration] = useState<'male' | 'female'>('female')
+  const [useWorkout, setUseWorkout] = useState(false)
+  const [useBeauty, setUseBeauty] = useState(false)
+  const [featureError, setFeatureError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -40,6 +50,8 @@ export default function ProfilePage() {
         if (data.face_illustration === 'male' || data.face_illustration === 'female') {
           setFaceIllustration(data.face_illustration)
         }
+        setUseWorkout(Boolean(data.use_workout))
+        setUseBeauty(Boolean(data.use_beauty))
       }
       if (error) {
         setError('プロフィールの読み込みに失敗しました')
@@ -77,6 +89,42 @@ export default function ProfilePage() {
     }
 
     setSaved(true)
+  }
+
+  async function handleToggleUseWorkout(value: boolean) {
+    setUseWorkout(value)
+    setFeatureError('')
+
+    const { error } = await supabase
+      .from('profile')
+      .update({ use_workout: value })
+      .eq('id', 1)
+
+    if (error) {
+      setUseWorkout(!value)
+      setFeatureError('設定の保存に失敗しました')
+      return
+    }
+
+    broadcastFeatureFlag('use_workout', value)
+  }
+
+  async function handleToggleUseBeauty(value: boolean) {
+    setUseBeauty(value)
+    setFeatureError('')
+
+    const { error } = await supabase
+      .from('profile')
+      .update({ use_beauty: value })
+      .eq('id', 1)
+
+    if (error) {
+      setUseBeauty(!value)
+      setFeatureError('設定の保存に失敗しました')
+      return
+    }
+
+    broadcastFeatureFlag('use_beauty', value)
   }
 
   async function handleRecordWeight() {
@@ -232,6 +280,26 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <span className={labelClass}>使う機能を選ぶ</span>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-700">筋トレ管理を使う</span>
+              <Toggle checked={useWorkout} onChange={handleToggleUseWorkout} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-700">美容相談を使う</span>
+              <Toggle checked={useBeauty} onChange={handleToggleUseBeauty} />
+            </div>
+
+            {featureError && (
+              <p className="text-center text-xs font-medium text-red-600">
+                {featureError}
+              </p>
+            )}
           </div>
 
           <button

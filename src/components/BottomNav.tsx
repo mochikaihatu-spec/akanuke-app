@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 function HomeIcon() {
   return (
@@ -58,22 +60,55 @@ function BeautyIcon() {
   )
 }
 
-const TABS = [
-  { href: '/', label: 'ホーム', Icon: HomeIcon },
-  { href: '/profile', label: 'プロフィール', Icon: ProfileIcon },
-  { href: '/meals', label: '食事記録', Icon: MealsIcon },
-  { href: '/weight', label: '体重', Icon: WeightIcon },
-  { href: '/workout', label: '筋トレ', Icon: WorkoutIcon },
-  { href: '/beauty', label: '美容', Icon: BeautyIcon },
+const ALL_TABS = [
+  { href: '/', label: 'ホーム', Icon: HomeIcon, key: null as 'use_workout' | 'use_beauty' | null },
+  { href: '/profile', label: 'プロフィール', Icon: ProfileIcon, key: null },
+  { href: '/meals', label: '食事記録', Icon: MealsIcon, key: null },
+  { href: '/weight', label: '体重', Icon: WeightIcon, key: null },
+  { href: '/workout', label: '筋トレ', Icon: WorkoutIcon, key: 'use_workout' },
+  { href: '/beauty', label: '美容', Icon: BeautyIcon, key: 'use_beauty' },
 ]
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const [useWorkout, setUseWorkout] = useState(false)
+  const [useBeauty, setUseBeauty] = useState(false)
+
+  useEffect(() => {
+    supabase
+      .from('profile')
+      .select('use_workout, use_beauty')
+      .eq('id', 1)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setUseWorkout(Boolean(data.use_workout))
+          setUseBeauty(Boolean(data.use_beauty))
+        }
+      })
+
+    function handleFlagsChanged(e: Event) {
+      const detail = (e as CustomEvent<{ key: 'use_workout' | 'use_beauty'; value: boolean }>)
+        .detail
+      if (!detail) return
+      if (detail.key === 'use_workout') setUseWorkout(detail.value)
+      if (detail.key === 'use_beauty') setUseBeauty(detail.value)
+    }
+
+    window.addEventListener('akanuke:feature-flags-changed', handleFlagsChanged)
+    return () => window.removeEventListener('akanuke:feature-flags-changed', handleFlagsChanged)
+  }, [])
+
+  const tabs = ALL_TABS.filter((tab) => {
+    if (tab.key === 'use_workout') return useWorkout
+    if (tab.key === 'use_beauty') return useBeauty
+    return true
+  })
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
       <div className="mx-auto flex max-w-sm">
-        {TABS.map(({ href, label, Icon }) => {
+        {tabs.map(({ href, label, Icon }) => {
           const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
 
           return (

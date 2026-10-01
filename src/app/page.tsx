@@ -16,6 +16,9 @@ export default function HomePage() {
   const [targetWeightKg, setTargetWeightKg] = useState<number | null>(null)
   const [workoutCountToday, setWorkoutCountToday] = useState(0)
   const [lastExerciseName, setLastExerciseName] = useState<string | null>(null)
+  const [useWorkout, setUseWorkout] = useState(false)
+  const [useBeauty, setUseBeauty] = useState(false)
+  const [latestBeautyCategories, setLatestBeautyCategories] = useState<string[] | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -24,30 +27,43 @@ export default function HomePage() {
       const endOfDay = new Date(startOfDay)
       endOfDay.setDate(endOfDay.getDate() + 1)
 
-      const [mealsResult, profileResult, workoutsTodayResult, lastWorkoutResult] =
-        await Promise.all([
-          supabase
-            .from('meal_records')
-            .select('calories, protein_g')
-            .gte('eaten_at', startOfDay.toISOString())
-            .lt('eaten_at', endOfDay.toISOString()),
-          supabase
-            .from('profile')
-            .select('weight_kg, target_weight_kg, target_calories, target_protein_g')
-            .eq('id', 1)
-            .single(),
-          supabase
-            .from('workout_records')
-            .select('id')
-            .gte('created_at', startOfDay.toISOString())
-            .lt('created_at', endOfDay.toISOString()),
-          supabase
-            .from('workout_records')
-            .select('exercise_name')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-        ])
+      const [
+        mealsResult,
+        profileResult,
+        workoutsTodayResult,
+        lastWorkoutResult,
+        lastBeautyResult,
+      ] = await Promise.all([
+        supabase
+          .from('meal_records')
+          .select('calories, protein_g')
+          .gte('eaten_at', startOfDay.toISOString())
+          .lt('eaten_at', endOfDay.toISOString()),
+        supabase
+          .from('profile')
+          .select(
+            'weight_kg, target_weight_kg, target_calories, target_protein_g, use_workout, use_beauty'
+          )
+          .eq('id', 1)
+          .single(),
+        supabase
+          .from('workout_records')
+          .select('id')
+          .gte('created_at', startOfDay.toISOString())
+          .lt('created_at', endOfDay.toISOString()),
+        supabase
+          .from('workout_records')
+          .select('exercise_name')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('beauty_consultations')
+          .select('categories')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ])
 
       if (mealsResult.data) {
         setTotalCalories(
@@ -69,12 +85,17 @@ export default function HomePage() {
         setTargetProteinG(
           p.target_protein_g === null ? null : Number(p.target_protein_g)
         )
+        setUseWorkout(Boolean(p.use_workout))
+        setUseBeauty(Boolean(p.use_beauty))
       }
       if (workoutsTodayResult.data) {
         setWorkoutCountToday(workoutsTodayResult.data.length)
       }
       if (lastWorkoutResult.data) {
         setLastExerciseName(lastWorkoutResult.data.exercise_name)
+      }
+      if (lastBeautyResult.data) {
+        setLatestBeautyCategories(lastBeautyResult.data.categories)
       }
       if (
         mealsResult.error ||
@@ -204,18 +225,32 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="col-span-2 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium text-slate-500">筋トレ</p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-              {workoutCountToday}
-              <span className="text-sm font-medium text-slate-400"> 種目</span>
-            </p>
-            <p className="mt-1 text-xs font-medium text-slate-400">
-              {lastExerciseName
-                ? `直近の記録: ${lastExerciseName}`
-                : 'まだ記録がありません'}
-            </p>
-          </div>
+          {useWorkout && (
+            <div className="col-span-2 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+              <p className="text-xs font-medium text-slate-500">筋トレ</p>
+              <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+                {workoutCountToday}
+                <span className="text-sm font-medium text-slate-400"> 種目</span>
+              </p>
+              <p className="mt-1 text-xs font-medium text-slate-400">
+                {lastExerciseName
+                  ? `直近の記録: ${lastExerciseName}`
+                  : 'まだ記録がありません'}
+              </p>
+            </div>
+          )}
+
+          {useBeauty && (
+            <div className="col-span-2 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+              <p className="text-xs font-medium text-slate-500">美容</p>
+              <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+                {latestBeautyCategories ? latestBeautyCategories.join('・') : '—'}
+              </p>
+              <p className="mt-1 text-xs font-medium text-slate-400">
+                {latestBeautyCategories ? '最近のプラン' : 'まだ相談していません'}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-3">
@@ -225,18 +260,28 @@ export default function HomePage() {
           >
             食事を記録する
           </Link>
-          <Link
-            href="/workout"
-            className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
-          >
-            筋トレを記録する
-          </Link>
+          {useWorkout && (
+            <Link
+              href="/workout"
+              className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
+            >
+              筋トレを記録する
+            </Link>
+          )}
           <Link
             href="/profile"
             className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
           >
             体重を記録する
           </Link>
+          {useBeauty && (
+            <Link
+              href="/beauty"
+              className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
+            >
+              美容相談をする
+            </Link>
+          )}
           <Link
             href="/chat"
             className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
