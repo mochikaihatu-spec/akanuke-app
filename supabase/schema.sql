@@ -45,11 +45,22 @@ create table if not exists beauty_consultations (
   created_at timestamptz not null default now()
 );
 
+-- 筋トレ記録
+create table if not exists workout_records (
+  id bigint generated always as identity primary key,
+  exercise_name text not null,
+  weight numeric(5,1),
+  reps integer,
+  sets integer,
+  created_at timestamptz not null default now()
+);
+
 -- RLS: ログイン機能がないので、anon キーからの読み書きをすべて許可する
 alter table profile enable row level security;
 alter table meal_records enable row level security;
 alter table weight_records enable row level security;
 alter table beauty_consultations enable row level security;
+alter table workout_records enable row level security;
 
 create policy "allow all on profile" on profile
   for all using (true) with check (true);
@@ -61,6 +72,9 @@ create policy "allow all on weight_records" on weight_records
   for all using (true) with check (true);
 
 create policy "allow all on beauty_consultations" on beauty_consultations
+  for all using (true) with check (true);
+
+create policy "allow all on workout_records" on workout_records
   for all using (true) with check (true);
 
 -- 写真保存用のストレージバケット

@@ -14,6 +14,8 @@ export default function HomePage() {
   const [targetProteinG, setTargetProteinG] = useState<number | null>(null)
   const [weightKg, setWeightKg] = useState<number | null>(null)
   const [targetWeightKg, setTargetWeightKg] = useState<number | null>(null)
+  const [workoutCountToday, setWorkoutCountToday] = useState(0)
+  const [lastExerciseName, setLastExerciseName] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -22,18 +24,30 @@ export default function HomePage() {
       const endOfDay = new Date(startOfDay)
       endOfDay.setDate(endOfDay.getDate() + 1)
 
-      const [mealsResult, profileResult] = await Promise.all([
-        supabase
-          .from('meal_records')
-          .select('calories, protein_g')
-          .gte('eaten_at', startOfDay.toISOString())
-          .lt('eaten_at', endOfDay.toISOString()),
-        supabase
-          .from('profile')
-          .select('weight_kg, target_weight_kg, target_calories, target_protein_g')
-          .eq('id', 1)
-          .single(),
-      ])
+      const [mealsResult, profileResult, workoutsTodayResult, lastWorkoutResult] =
+        await Promise.all([
+          supabase
+            .from('meal_records')
+            .select('calories, protein_g')
+            .gte('eaten_at', startOfDay.toISOString())
+            .lt('eaten_at', endOfDay.toISOString()),
+          supabase
+            .from('profile')
+            .select('weight_kg, target_weight_kg, target_calories, target_protein_g')
+            .eq('id', 1)
+            .single(),
+          supabase
+            .from('workout_records')
+            .select('id')
+            .gte('created_at', startOfDay.toISOString())
+            .lt('created_at', endOfDay.toISOString()),
+          supabase
+            .from('workout_records')
+            .select('exercise_name')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ])
 
       if (mealsResult.data) {
         setTotalCalories(
@@ -56,7 +70,18 @@ export default function HomePage() {
           p.target_protein_g === null ? null : Number(p.target_protein_g)
         )
       }
-      if (mealsResult.error || profileResult.error) {
+      if (workoutsTodayResult.data) {
+        setWorkoutCountToday(workoutsTodayResult.data.length)
+      }
+      if (lastWorkoutResult.data) {
+        setLastExerciseName(lastWorkoutResult.data.exercise_name)
+      }
+      if (
+        mealsResult.error ||
+        profileResult.error ||
+        workoutsTodayResult.error ||
+        lastWorkoutResult.error
+      ) {
         setError('データの読み込みに失敗しました')
       }
       setLoading(false)
@@ -178,6 +203,19 @@ export default function HomePage() {
               {targetWeightKg !== null ? `目標 ${targetWeightKg} kg` : '目標未設定'}
             </p>
           </div>
+
+          <div className="col-span-2 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+            <p className="text-xs font-medium text-slate-500">筋トレ</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+              {workoutCountToday}
+              <span className="text-sm font-medium text-slate-400"> 種目</span>
+            </p>
+            <p className="mt-1 text-xs font-medium text-slate-400">
+              {lastExerciseName
+                ? `直近の記録: ${lastExerciseName}`
+                : 'まだ記録がありません'}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -186,6 +224,12 @@ export default function HomePage() {
             className="rounded-xl bg-blue-600 py-3 text-center text-base font-medium text-white transition-colors"
           >
             食事を記録する
+          </Link>
+          <Link
+            href="/workout"
+            className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
+          >
+            筋トレを記録する
           </Link>
           <Link
             href="/profile"

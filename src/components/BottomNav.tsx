@@ -40,6 +40,16 @@ function WeightIcon() {
   )
 }
 
+function WorkoutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2.3" y="9" width="3" height="6" rx="1" />
+      <rect x="18.7" y="9" width="3" height="6" rx="1" />
+      <path d="M5.3 12h13.4" />
+    </svg>
+  )
+}
+
 function BeautyIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
@@ -53,6 +63,7 @@ const TABS = [
   { href: '/profile', label: 'プロフィール', Icon: ProfileIcon },
   { href: '/meals', label: '食事記録', Icon: MealsIcon },
   { href: '/weight', label: '体重', Icon: WeightIcon },
+  { href: '/workout', label: '筋トレ', Icon: WorkoutIcon },
   { href: '/beauty', label: '美容', Icon: BeautyIcon },
 ]
 
