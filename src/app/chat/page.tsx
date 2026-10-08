@@ -39,8 +39,7 @@ async function getTodayContext() {
     supabase
       .from('profile')
       .select('target_calories, target_protein_g')
-      .eq('id', 1)
-      .single(),
+      .maybeSingle(),
   ])
 
   const meals = mealsResult.data ?? []

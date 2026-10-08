@@ -261,8 +261,7 @@ export default function BeautyPage() {
     supabase
       .from('profile')
       .select('face_illustration')
-      .eq('id', 1)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         if (data?.face_illustration === 'male' || data?.face_illustration === 'female') {
           setIllustration(data.face_illustration)

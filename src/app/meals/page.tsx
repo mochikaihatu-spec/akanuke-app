@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getUserId, supabase } from '@/lib/supabase'
 
 const inputClass =
   'rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100'
@@ -28,15 +28,18 @@ function fileToBase64(file: File): Promise<string> {
   })
 }
 
+// 非公開バケットに「自分のユーザーIDのフォルダ」へ保存し、保存先のパスを返す
 async function uploadMealPhoto(file: File) {
+  const userId = await getUserId()
+  if (!userId) throw new Error('ログインが必要です')
+
   const ext = file.name.split('.').pop() || 'jpg'
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
   const { error } = await supabase.storage.from('meal-photos').upload(path, file)
   if (error) throw error
 
-  const { data } = supabase.storage.from('meal-photos').getPublicUrl(path)
-  return data.publicUrl
+  return path
 }
 
 export default function MealsPage() {
@@ -77,8 +80,7 @@ export default function MealsPage() {
       supabase
         .from('profile')
         .select('target_calories, target_protein_g')
-        .eq('id', 1)
-        .single(),
+        .maybeSingle(),
     ])
 
     if (mealsResult.data) setMeals(mealsResult.data)

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { getUserId, supabase } from '@/lib/supabase'
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true)
@@ -47,8 +47,7 @@ export default function HomePage() {
           .select(
             'weight_kg, target_weight_kg, target_calories, target_protein_g, use_workout, use_beauty'
           )
-          .eq('id', 1)
-          .single(),
+          .maybeSingle(),
         supabase
           .from('workout_records')
           .select('id')
@@ -195,9 +194,15 @@ export default function HomePage() {
 
         setTodos(data.items)
 
-        await supabase
-          .from('daily_todos')
-          .upsert({ todo_date: context.todayDateStr, items: data.items })
+        const userId = await getUserId()
+        if (userId) {
+          await supabase
+            .from('daily_todos')
+            .upsert(
+              { user_id: userId, todo_date: context.todayDateStr, items: data.items },
+              { onConflict: 'user_id,todo_date' }
+            )
+        }
       } catch {
         setTodosError('ToDoの取得に失敗しました')
       } finally {

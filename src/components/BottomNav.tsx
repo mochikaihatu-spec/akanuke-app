@@ -75,17 +75,27 @@ export default function BottomNav() {
   const [useBeauty, setUseBeauty] = useState(false)
 
   useEffect(() => {
-    supabase
-      .from('profile')
-      .select('use_workout, use_beauty')
-      .eq('id', 1)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setUseWorkout(Boolean(data.use_workout))
-          setUseBeauty(Boolean(data.use_beauty))
-        }
-      })
+    async function loadFlags() {
+      const { data } = await supabase
+        .from('profile')
+        .select('use_workout, use_beauty')
+        .maybeSingle()
+
+      setUseWorkout(Boolean(data?.use_workout))
+      setUseBeauty(Boolean(data?.use_beauty))
+    }
+
+    loadFlags()
+
+    // ログイン・ログアウトのたびに、そのユーザーの設定を読み直す
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        setUseWorkout(false)
+        setUseBeauty(false)
+      } else if (event === 'SIGNED_IN') {
+        setTimeout(loadFlags, 0)
+      }
+    })
 
     function handleFlagsChanged(e: Event) {
       const detail = (e as CustomEvent<{ key: 'use_workout' | 'use_beauty'; value: boolean }>)
@@ -96,8 +106,13 @@ export default function BottomNav() {
     }
 
     window.addEventListener('akanuke:feature-flags-changed', handleFlagsChanged)
-    return () => window.removeEventListener('akanuke:feature-flags-changed', handleFlagsChanged)
+    return () => {
+      authListener.subscription.unsubscribe()
+      window.removeEventListener('akanuke:feature-flags-changed', handleFlagsChanged)
+    }
   }, [])
+
+  if (pathname === '/login') return null
 
   const tabs = ALL_TABS.filter((tab) => {
     if (tab.key === 'use_workout') return useWorkout

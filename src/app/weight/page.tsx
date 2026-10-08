@@ -35,8 +35,7 @@ export default function WeightPage() {
         supabase
           .from('profile')
           .select('target_weight_kg')
-          .eq('id', 1)
-          .single(),
+          .maybeSingle(),
       ])
 
       if (recordsResult.data) {

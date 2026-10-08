@@ -1,8 +1,23 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+import { getUserId, supabase } from '@/lib/supabase'
 import Toggle from '@/components/Toggle'
+
+// ログイン中の自分のプロフィール行だけを更新する。失敗したらtrueを返す
+async function updateMyProfile(values: Record<string, unknown>) {
+  const userId = await getUserId()
+  if (!userId) return true
+
+  const { data, error } = await supabase
+    .from('profile')
+    .update(values)
+    .eq('user_id', userId)
+    .select('user_id')
+
+  return Boolean(error) || !data || data.length === 0
+}
 
 function broadcastFeatureFlag(key: 'use_workout' | 'use_beauty', value: boolean) {
   window.dispatchEvent(
@@ -15,6 +30,7 @@ const inputClass =
 const labelClass = 'text-sm font-medium text-slate-600'
 
 export default function ProfilePage() {
+  const router = useRouter()
   const [heightCm, setHeightCm] = useState('')
   const [weightKg, setWeightKg] = useState('')
   const [targetWeightKg, setTargetWeightKg] = useState('')
@@ -38,8 +54,7 @@ export default function ProfilePage() {
       const { data, error } = await supabase
         .from('profile')
         .select('*')
-        .eq('id', 1)
-        .single()
+        .maybeSingle()
 
       if (data) {
         setHeightCm(data.height_cm?.toString() ?? '')
@@ -68,22 +83,19 @@ export default function ProfilePage() {
     setSaved(false)
     setError('')
 
-    const { error } = await supabase
-      .from('profile')
-      .update({
-        height_cm: heightCm === '' ? null : Number(heightCm),
-        weight_kg: weightKg === '' ? null : Number(weightKg),
-        target_weight_kg: targetWeightKg === '' ? null : Number(targetWeightKg),
-        target_calories: targetCalories === '' ? null : Number(targetCalories),
-        target_protein_g: targetProteinG === '' ? null : Number(targetProteinG),
-        face_illustration: faceIllustration,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', 1)
+    const failed = await updateMyProfile({
+      height_cm: heightCm === '' ? null : Number(heightCm),
+      weight_kg: weightKg === '' ? null : Number(weightKg),
+      target_weight_kg: targetWeightKg === '' ? null : Number(targetWeightKg),
+      target_calories: targetCalories === '' ? null : Number(targetCalories),
+      target_protein_g: targetProteinG === '' ? null : Number(targetProteinG),
+      face_illustration: faceIllustration,
+      updated_at: new Date().toISOString(),
+    })
 
     setSaving(false)
 
-    if (error) {
+    if (failed) {
       setError('保存に失敗しました。もう一度お試しください')
       return
     }
@@ -95,12 +107,9 @@ export default function ProfilePage() {
     setUseWorkout(value)
     setFeatureError('')
 
-    const { error } = await supabase
-      .from('profile')
-      .update({ use_workout: value })
-      .eq('id', 1)
+    const failed = await updateMyProfile({ use_workout: value })
 
-    if (error) {
+    if (failed) {
       setUseWorkout(!value)
       setFeatureError('設定の保存に失敗しました')
       return
@@ -113,18 +122,21 @@ export default function ProfilePage() {
     setUseBeauty(value)
     setFeatureError('')
 
-    const { error } = await supabase
-      .from('profile')
-      .update({ use_beauty: value })
-      .eq('id', 1)
+    const failed = await updateMyProfile({ use_beauty: value })
 
-    if (error) {
+    if (failed) {
       setUseBeauty(!value)
       setFeatureError('設定の保存に失敗しました')
       return
     }
 
     broadcastFeatureFlag('use_beauty', value)
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
   }
 
   async function handleRecordWeight() {
@@ -321,6 +333,14 @@ export default function ProfilePage() {
             </p>
           )}
         </form>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-6 w-full rounded-xl border border-slate-200 bg-white py-3 text-base font-medium text-slate-600 transition-colors"
+        >
+          ログアウト
+        </button>
       </div>
     </div>
   )
