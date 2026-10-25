@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
 
 type ChatMessage =
   | { role: 'user'; content: string }
@@ -89,15 +90,15 @@ export default function ChatPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error ?? '回答の取得に失敗しました')
+        throw new AiApiError(data.error ?? '回答の取得に失敗しました')
       }
 
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', summary: data.summary, detail: data.detail, expanded: false },
       ])
-    } catch {
-      setError('回答の取得に失敗しました。もう一度お試しください')
+    } catch (e) {
+      setError(aiErrorMessage(e, '回答の取得に失敗しました。もう一度お試しください'))
     } finally {
       setSending(false)
     }

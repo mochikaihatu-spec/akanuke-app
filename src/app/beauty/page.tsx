@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
 import FaceDiagram, { type FaceIllustration, type FacePart } from '@/components/FaceDiagram'
 
 const cardClass = 'rounded-3xl border border-slate-100 bg-white p-6 shadow-sm'
@@ -324,7 +325,7 @@ export default function BeautyPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error ?? '回答の取得に失敗しました')
+        throw new AiApiError(data.error ?? '回答の取得に失敗しました')
       }
 
       const { error: insertError } = await supabase
@@ -343,8 +344,8 @@ export default function BeautyPage() {
       setSelectedGoals([])
       setConcern('')
       await loadHistory()
-    } catch {
-      setError('回答の取得に失敗しました。もう一度お試しください')
+    } catch (e) {
+      setError(aiErrorMessage(e, '回答の取得に失敗しました。もう一度お試しください'))
     } finally {
       setSending(false)
     }

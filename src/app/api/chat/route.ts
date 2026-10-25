@@ -1,5 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
+import { AI_INPUT_LIMITS, badRequest, checkAiAccess, readJsonBody } from '@/lib/ai-guard'
+import { withSafetyRules } from '@/lib/ai-safety'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -41,18 +43,31 @@ ${mealLines}
 }
 
 export async function POST(request: Request) {
-  const body = await request.json()
+  const body = await readJsonBody(request)
   const question = body?.question
   const context = body?.context as ChatContext | undefined
 
   if (!question || typeof question !== 'string') {
-    return NextResponse.json({ error: '質問を入力してください' }, { status: 400 })
+    return badRequest('質問を入力してください')
   }
-  if (!context) {
-    return NextResponse.json({ error: 'データの取得に失敗しました' }, { status: 400 })
+  if (question.length > AI_INPUT_LIMITS.questionChars) {
+    return badRequest(`質問は${AI_INPUT_LIMITS.questionChars}文字以内で入力してください`)
+  }
+  if (
+    !context ||
+    typeof context !== 'object' ||
+    !Array.isArray(context.meals) ||
+    typeof context.totalCalories !== 'number' ||
+    typeof context.totalProtein !== 'number' ||
+    JSON.stringify(context).length > AI_INPUT_LIMITS.contextJsonChars
+  ) {
+    return badRequest('データの取得に失敗しました')
   }
 
-  const systemPrompt = `あなたはダイエット・食事管理をサポートするアシスタントです。ユーザーの今日の食事記録と目標が以下の通り与えられます。この情報をもとに、質問にわかりやすい日本語で答えてください。
+  const blocked = await checkAiAccess('chat')
+  if (blocked) return blocked
+
+  const systemPrompt = withSafetyRules(`あなたはダイエット・食事管理をサポートするアシスタントです。ユーザーの今日の食事記録と目標が以下の通り与えられます。この情報をもとに、質問にわかりやすい日本語で答えてください。
 
 ${buildSummary(context)}
 
@@ -60,7 +75,7 @@ ${buildSummary(context)}
 {
   "summary": "回答の要約を1〜2行(40文字程度)で。例: タンパク質があと20g足りません。鶏肉や豆腐を一品足しましょう",
   "detail": "これまで通りの詳しいアドバイス全文"
-}`
+}`)
 
   try {
     const message = await anthropic.messages.create({

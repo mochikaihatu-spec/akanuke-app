@@ -68,6 +68,15 @@ create table if not exists daily_todos (
   primary key (user_id, todo_date)
 );
 
+-- AIの利用回数(ユーザー・日付・機能ごと)。増やすのは consume_ai_quota 関数だけ(011参照)
+create table if not exists ai_usage (
+  user_id    uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  usage_date date not null,
+  kind       text not null,
+  count      integer not null default 0,
+  primary key (user_id, usage_date, kind)
+);
+
 create index if not exists meal_records_user_id_idx         on meal_records (user_id);
 create index if not exists weight_records_user_id_idx       on weight_records (user_id);
 create index if not exists workout_records_user_id_idx      on workout_records (user_id);
@@ -140,3 +149,39 @@ create policy "own folder on meal-photos" on storage.objects
     bucket_id = 'meal-photos'
     and (storage.foldername(name))[1] = (select auth.uid())::text
   );
+
+-- AI利用回数の制限(詳細は supabase/migrations/011_add_ai_usage_limits.sql)
+alter table ai_usage enable row level security;
+
+create policy "read own ai_usage" on ai_usage
+  for select to authenticated
+  using (user_id = (select auth.uid()));
+
+create or replace function public.consume_ai_quota(p_kind text, p_limit integer)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  today date := (now() at time zone 'Asia/Tokyo')::date;
+  new_count integer;
+begin
+  if uid is null then
+    return false;
+  end if;
+
+  insert into ai_usage as u (user_id, usage_date, kind, count)
+  values (uid, today, p_kind, 1)
+  on conflict (user_id, usage_date, kind)
+  do update set count = u.count + 1
+  where u.count < p_limit
+  returning u.count into new_count;
+
+  return new_count is not null;
+end;
+$$;
+
+revoke all on function public.consume_ai_quota(text, integer) from public, anon;
+grant execute on function public.consume_ai_quota(text, integer) to authenticated;

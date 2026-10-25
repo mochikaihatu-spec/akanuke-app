@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { getUserId, supabase } from '@/lib/supabase'
+import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
 
 const inputClass =
   'rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100'
@@ -153,7 +154,7 @@ export default function MealsPage() {
           body: JSON.stringify({ image: base64, mediaType: file.type }),
         }).then(async (res) => {
           const data = await res.json()
-          if (!res.ok) throw new Error(data.error ?? '解析に失敗しました')
+          if (!res.ok) throw new AiApiError(data.error ?? '解析に失敗しました')
           return data
         }),
       ])
@@ -165,8 +166,8 @@ export default function MealsPage() {
         analysis.protein_g !== null ? String(analysis.protein_g) : ''
       )
       setDraftMode(true)
-    } catch {
-      setPhotoError('写真の解析に失敗しました。もう一度お試しください')
+    } catch (e) {
+      setPhotoError(aiErrorMessage(e, '写真の解析に失敗しました。もう一度お試しください'))
       setPhotoPreviewUrl(null)
     } finally {
       setAnalyzing(false)

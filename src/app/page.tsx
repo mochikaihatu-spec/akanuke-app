@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getUserId, supabase } from '@/lib/supabase'
+import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true)
@@ -190,7 +191,7 @@ export default function HomePage() {
 
         const data = await res.json()
 
-        if (!res.ok) throw new Error(data.error ?? 'ToDoの生成に失敗しました')
+        if (!res.ok) throw new AiApiError(data.error ?? 'ToDoの生成に失敗しました')
 
         setTodos(data.items)
 
@@ -203,8 +204,8 @@ export default function HomePage() {
               { onConflict: 'user_id,todo_date' }
             )
         }
-      } catch {
-        setTodosError('ToDoの取得に失敗しました')
+      } catch (e) {
+        setTodosError(aiErrorMessage(e, 'ToDoの取得に失敗しました'))
       } finally {
         setTodosLoading(false)
       }

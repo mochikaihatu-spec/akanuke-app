@@ -1,21 +1,35 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
+import { AI_INPUT_LIMITS, badRequest, checkAiAccess, readJsonBody } from '@/lib/ai-guard'
+import { withSafetyRules } from '@/lib/ai-safety'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request: Request) {
-  const body = await request.json()
+  const body = await readJsonBody(request)
   const categories = body?.categories
   const concern = body?.concern
 
   if (!Array.isArray(categories) || categories.length === 0) {
-    return NextResponse.json(
-      { error: 'カテゴリを1つ以上選んでください' },
-      { status: 400 }
-    )
+    return badRequest('カテゴリを1つ以上選んでください')
+  }
+  if (
+    categories.length > AI_INPUT_LIMITS.categories ||
+    categories.some((c) => typeof c !== 'string' || c.length > AI_INPUT_LIMITS.categoryChars)
+  ) {
+    return badRequest('カテゴリの指定が正しくありません')
+  }
+  if (concern !== undefined && concern !== null && typeof concern !== 'string') {
+    return badRequest('相談内容の形式が正しくありません')
+  }
+  if (typeof concern === 'string' && concern.length > AI_INPUT_LIMITS.concernChars) {
+    return badRequest(`相談内容は${AI_INPUT_LIMITS.concernChars}文字以内で入力してください`)
   }
 
-  const systemPrompt = `あなたは美容・垢抜けに関する相談に乗るアシスタントです。ユーザーが選んだ気になる部分や、なりたい印象・気になる点をもとに、日本語で具体的な行動につながるアドバイスをしてください。
+  const blocked = await checkAiAccess('beauty')
+  if (blocked) return blocked
+
+  const systemPrompt = withSafetyRules(`あなたは美容・垢抜けに関する相談に乗るアシスタントです。ユーザーが選んだ気になる部分や、なりたい印象・気になる点をもとに、日本語で具体的な行動につながるアドバイスをしてください。
 
 必ず守ること:
 - 整形やコンプレックスを否定するような回答は避けてください
@@ -31,7 +45,7 @@ export async function POST(request: Request) {
   ],
   "weeklyTasks": ["今週やることを体言止めで2〜4個"]
 }
-items は2〜4件にしてください。`
+items は2〜4件にしてください。`)
 
   const userMessage = `気になる部分: ${categories.join('、')}
 ${concern ? concern : '(詳細の記入なし)'}`

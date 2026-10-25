@@ -1,21 +1,38 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
+import {
+  ALLOWED_IMAGE_TYPES,
+  AI_INPUT_LIMITS,
+  badRequest,
+  checkAiAccess,
+  readJsonBody,
+} from '@/lib/ai-guard'
+import { withSafetyRules } from '@/lib/ai-safety'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request: Request) {
-  const body = await request.json()
+  const body = await readJsonBody(request)
   const image = body?.image
   const mediaType = body?.mediaType
 
-  if (!image || typeof image !== 'string' || !mediaType) {
-    return NextResponse.json({ error: '画像が見つかりません' }, { status: 400 })
+  if (!image || typeof image !== 'string' || typeof mediaType !== 'string') {
+    return badRequest('画像が見つかりません')
+  }
+  if (!(ALLOWED_IMAGE_TYPES as readonly string[]).includes(mediaType)) {
+    return badRequest('対応していない画像形式です(JPEG・PNG・GIF・WebPのみ)')
+  }
+  if (image.length > AI_INPUT_LIMITS.imageBase64Chars) {
+    return badRequest('画像が大きすぎます')
   }
 
-  const systemPrompt = `あなたは食事の写真から料理を分析する栄養士アシスタントです。与えられた画像を見て、料理名・推定カロリー(kcal)・推定タンパク質量(g)を判定してください。
+  const blocked = await checkAiAccess('meal_photo')
+  if (blocked) return blocked
+
+  const systemPrompt = withSafetyRules(`あなたは食事の写真から料理を分析する栄養士アシスタントです。与えられた画像を見て、料理名・推定カロリー(kcal)・推定タンパク質量(g)を判定してください。
 
 必ず次のJSON形式のみで回答してください。説明文や前置きは一切書かないでください。
-{"name": "料理名", "calories": 数値, "protein_g": 数値}`
+{"name": "料理名", "calories": 数値, "protein_g": 数値}`)
 
   try {
     const message = await anthropic.messages.create({
@@ -30,7 +47,7 @@ export async function POST(request: Request) {
               type: 'image',
               source: {
                 type: 'base64',
-                media_type: mediaType,
+                media_type: mediaType as (typeof ALLOWED_IMAGE_TYPES)[number],
                 data: image,
               },
             },
