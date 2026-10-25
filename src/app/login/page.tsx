@@ -16,7 +16,7 @@ function translateError(message: string) {
     return 'このメールアドレスはすでに登録されています。ログインしてください'
   }
   if (message.includes('at least')) {
-    return 'パスワードは6文字以上にしてください'
+    return 'パスワードは10文字以上にしてください'
   }
   if (message.includes('Email not confirmed')) {
     return 'メールの確認が完了していません'
@@ -108,12 +108,12 @@ export default function LoginPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className={labelClass}>パスワード(6文字以上)</span>
+            <span className={labelClass}>パスワード{mode === 'signup' ? '(10文字以上)' : ''}</span>
             <input
               type="password"
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               required
-              minLength={6}
+              minLength={mode === 'signup' ? 10 : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputClass}
