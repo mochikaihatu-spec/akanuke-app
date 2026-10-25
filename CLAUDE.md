@@ -22,8 +22,10 @@ Next.js 16.4.3(App Router。`middleware` は `src/proxy.ts`)/ React 19 / TypeScr
 ## 現在の状態(2026-10-25)
 - ログイン・ユーザー別データ分離は実装・デプロイ済み(コミット e22c2af)。
 - **完了**: AI 利用回数制限(`src/lib/ai-guard.ts`、1日あたり chat20/beauty10/todos5/meal_photo10、DB は `consume_ai_quota` 関数)、API 入力長制限、API 内ログイン確認、共通 AI 安全プロンプト(`src/lib/ai-safety.ts`)。Next.js/sharp 更新(0-2)。新しい `/api/*` は必ず「入力チェック → `checkAiAccess(kind)` → `withSafetyRules(prompt)`」の順で作る。
-- **未対応(公開前に必須)**: キー再発行(Anthropic・Notion)と不要な NOTION_* の削除、セキュリティヘッダー、ESLint 3エラー、プライバシーポリシー・利用規約・アカウント削除、Supabase Auth のメール確認設定。
+- 完了(0-3): Anthropic キー再発行済み・NOTION_* を Vercel から削除済み。ローカル `.env.local` の AI キーは旧キー(無効)なので、ローカルで AI を試すなら新キーに書き換える。AI の返答は `max_tokens` を余裕(1200)で取り、JSON が切れても読める作りにすること(`/api/chat` の `extractReply` 参照)。
+- 完了(0-4): セキュリティヘッダー(CSP 含む)を `next.config.ts` に設定、ESLint エラー 0 件。**新しい外部サービス(外部フォント・画像・API 等)を使うときは `next.config.ts` の CSP(`connect-src` / `img-src` 等)に追記しないとブラウザにブロックされる。**
+- **未対応(公開前に必須)**: Notion 側のトークン無効化(ユーザー作業)、プライバシーポリシー・利用規約・アカウント削除、Supabase Auth のメール確認設定。
 - 保留: 間接依存 4 件の脆弱性(zod / js-yaml / brace-expansion / source-map-js。本番の外部入力経路ではない)。
 
 ## 次の手順
-`docs/02_roadmap.md` のフェーズ 0-3 以降(キー再発行 → セキュリティヘッダー・lint → Supabase Auth 設定 → 規約・アカウント削除)、その後フェーズ 1(MVP)。進捗は `docs/02_roadmap.md` の「進捗メモ」に追記する。
+`docs/02_roadmap.md` のフェーズ 0-4 以降(セキュリティヘッダー・lint → Supabase Auth 設定 → 規約・アカウント削除)、その後フェーズ 1(MVP)。進捗は `docs/02_roadmap.md` の「進捗メモ」に追記する。

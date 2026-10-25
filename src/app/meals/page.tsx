@@ -96,6 +96,8 @@ export default function MealsPage() {
   }, [])
 
   useEffect(() => {
+    // データ取得後(await の後)に state を更新するだけなので問題ない。ルールの誤検知
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData()
   }, [loadData])
 

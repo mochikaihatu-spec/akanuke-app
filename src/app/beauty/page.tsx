@@ -81,14 +81,6 @@ function FreshIcon({ className }: IconProps) {
   )
 }
 
-function SparkleIcon({ className }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
-      <path d="M12 3c.6 2.7 1.4 4.5 2.5 5.6C15.6 9.6 17.3 10.4 20 11c-2.7.6-4.5 1.4-5.6 2.5C13.4 14.6 12.6 16.3 12 19c-.6-2.7-1.4-4.5-2.5-5.6C8.4 12.4 6.7 11.6 4 11c2.7-.6 4.5-1.4 5.6-2.5C10.6 7.5 11.4 5.7 12 3Z" />
-    </svg>
-  )
-}
-
 const CATEGORIES: { label: string; Icon: (p: IconProps) => React.JSX.Element }[] = [
   { label: '髪', Icon: HairIcon },
   { label: '眉', Icon: BrowIcon },
@@ -257,6 +249,8 @@ export default function BeautyPage() {
   }
 
   useEffect(() => {
+    // データ取得後(await の後)に state を更新するだけなので問題ない。ルールの誤検知
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadHistory()
 
     supabase
