@@ -42,6 +42,46 @@ ${mealLines}
 目標タンパク質: ${context.targetProteinG !== null ? `${context.targetProteinG} g` : '未設定'}`
 }
 
+// JSONの文字列部分(途中で切れていてもよい)を読み取る
+function readJsonString(raw: string) {
+  try {
+    return JSON.parse(`"${raw.replace(/\\$/, '')}"`) as string
+  } catch {
+    return raw
+  }
+}
+
+// AIの返事から summary / detail を取り出す。JSONとして読めなければ、読める部分だけ使う
+function extractReply(rawText: string) {
+  const jsonMatch = rawText.match(/\{[\s\S]*\}/)
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0])
+      if (typeof parsed.summary === 'string') {
+        return {
+          summary: parsed.summary,
+          detail: typeof parsed.detail === 'string' ? parsed.detail : '',
+        }
+      }
+    } catch {
+      // 下の取り出し方に進む
+    }
+  }
+
+  const summary = rawText.match(/"summary"\s*:\s*"((?:[^"\\]|\\.)*)/)
+  const detail = rawText.match(/"detail"\s*:\s*"((?:[^"\\]|\\.)*)/)
+  if (summary) {
+    return {
+      summary: readJsonString(summary[1]),
+      detail: detail ? readJsonString(detail[1]) : '',
+    }
+  }
+
+  const text = rawText.trim()
+  if (!text) throw new Error('AIの応答が空でした')
+  return { summary: text.slice(0, 60), detail: text }
+}
+
 export async function POST(request: Request) {
   const body = await readJsonBody(request)
   const question = body?.question
@@ -74,13 +114,13 @@ ${buildSummary(context)}
 必ず次のJSON形式のみで回答してください。説明文や前置きは一切書かないでください。
 {
   "summary": "回答の要約を1〜2行(40文字程度)で。例: タンパク質があと20g足りません。鶏肉や豆腐を一品足しましょう",
-  "detail": "これまで通りの詳しいアドバイス全文"
+  "detail": "詳しいアドバイス。長くなりすぎないよう400文字程度まで"
 }`)
 
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-5',
-      max_tokens: 600,
+      max_tokens: 1200,
       system: systemPrompt,
       messages: [{ role: 'user', content: question }],
     })
@@ -88,14 +128,7 @@ ${buildSummary(context)}
     const textBlock = message.content.find((block) => block.type === 'text')
     const rawText = textBlock && 'text' in textBlock ? textBlock.text : ''
 
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error('AIの応答を解析できませんでした')
-    }
-
-    const parsed = JSON.parse(jsonMatch[0])
-    const summary = typeof parsed.summary === 'string' ? parsed.summary : rawText
-    const detail = typeof parsed.detail === 'string' ? parsed.detail : ''
+    const { summary, detail } = extractReply(rawText)
 
     return NextResponse.json({ summary, detail })
   } catch (error) {

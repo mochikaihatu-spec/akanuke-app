@@ -53,7 +53,7 @@ ${concern ? concern : '(詳細の記入なし)'}`
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-5',
-      max_tokens: 700,
+      max_tokens: 1200,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
     })
