@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getUserId, supabase } from '@/lib/supabase'
 import Toggle from '@/components/Toggle'
@@ -48,6 +49,10 @@ export default function ProfilePage() {
   const [recordingWeight, setRecordingWeight] = useState(false)
   const [weightRecorded, setWeightRecorded] = useState(false)
   const [weightRecordError, setWeightRecordError] = useState('')
+
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     async function loadProfile() {
@@ -137,6 +142,41 @@ export default function ProfilePage() {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
+  }
+
+  // アカウントと全データの削除(元に戻せない)。先に自分の食事写真を消し、最後にアカウントを消す
+  async function handleDeleteAccount() {
+    if (deleteConfirmText !== '削除') return
+
+    setDeleting(true)
+    setDeleteError('')
+
+    try {
+      const userId = await getUserId()
+      if (!userId) throw new Error('not logged in')
+
+      const bucket = supabase.storage.from('meal-photos')
+      for (let i = 0; i < 20; i++) {
+        const { data: files, error: listError } = await bucket.list(userId, { limit: 100 })
+        if (listError) throw listError
+        if (!files || files.length === 0) break
+
+        const { error: removeError } = await bucket.remove(
+          files.map((f) => `${userId}/${f.name}`)
+        )
+        if (removeError) throw removeError
+      }
+
+      const { error: deleteAccountError } = await supabase.rpc('delete_my_account')
+      if (deleteAccountError) throw deleteAccountError
+
+      await supabase.auth.signOut({ scope: 'local' })
+      router.push('/login')
+      router.refresh()
+    } catch {
+      setDeleteError('削除に失敗しました。時間をおいて、もう一度お試しください')
+      setDeleting(false)
+    }
   }
 
   async function handleRecordWeight() {
@@ -341,6 +381,42 @@ export default function ProfilePage() {
         >
           ログアウト
         </button>
+
+        <div className="mt-6 flex justify-center gap-4 text-xs text-slate-500">
+          <Link href="/terms" className="underline">利用規約</Link>
+          <Link href="/privacy" className="underline">プライバシーポリシー</Link>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-3 rounded-3xl border border-red-100 bg-white p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-red-600">アカウントを削除する</h2>
+          <p className="text-sm leading-relaxed text-slate-600">
+            アカウントと、食事・写真・体重・筋トレ・美容相談などのすべてのデータが消えます。
+            <strong>元に戻すことはできません。</strong>
+          </p>
+          <label className="flex flex-col gap-2">
+            <span className="text-xs text-slate-500">
+              実行するには、下の欄に「削除」と入力してください
+            </span>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="削除"
+              className={inputClass}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={handleDeleteAccount}
+            disabled={deleteConfirmText !== '削除' || deleting}
+            className="rounded-xl bg-red-600 py-3 text-base font-medium text-white transition-colors disabled:opacity-40"
+          >
+            {deleting ? '削除中...' : 'アカウントを完全に削除する'}
+          </button>
+          {deleteError && (
+            <p className="text-center text-sm font-medium text-red-600">{deleteError}</p>
+          )}
+        </div>
       </div>
     </div>
   )

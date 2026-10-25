@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -127,6 +128,16 @@ export default function LoginPage() {
           >
             {submitting ? '送信中...' : mode === 'login' ? 'ログイン' : '登録してはじめる'}
           </button>
+
+          {mode === 'signup' && (
+            <p className="text-center text-xs text-slate-500">
+              登録すると、
+              <Link href="/terms" className="font-medium text-blue-600">利用規約</Link>
+              と
+              <Link href="/privacy" className="font-medium text-blue-600">プライバシーポリシー</Link>
+              に同意したものとみなします
+            </p>
+          )}
 
           {notice && (
             <p className="text-center text-sm font-medium text-blue-600">{notice}</p>

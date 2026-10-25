@@ -32,9 +32,11 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
   const isLoginPage = pathname === '/login'
+  // ログインしていなくても読めるページ(登録前に規約とポリシーを確認できるように)
+  const isPublicPage = isLoginPage || pathname === '/privacy' || pathname === '/terms'
   const isApi = pathname.startsWith('/api/')
 
-  if (!isLoggedIn && !isLoginPage) {
+  if (!isLoggedIn && !isPublicPage) {
     if (isApi) {
       return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
     }

@@ -112,7 +112,7 @@ export default function BottomNav() {
     }
   }, [])
 
-  if (pathname === '/login') return null
+  if (pathname === '/login' || pathname === '/privacy' || pathname === '/terms') return null
 
   const tabs = ALL_TABS.filter((tab) => {
     if (tab.key === 'use_workout') return useWorkout
