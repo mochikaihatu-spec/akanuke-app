@@ -8,7 +8,7 @@
 「憧れを、あなた専用の行動プランに。」憧れの雰囲気を実行できる要素に分解し、今日のミッション+週間プランにする AI コーチ。ユーザーは日本の大学生の初心者プログラマー(週5時間)。説明は日本語・初心者向けに。
 
 ## 技術構成
-Next.js 16.3.2(App Router。`middleware` は `src/proxy.ts`)/ React 19 / TypeScript / Tailwind v4 / recharts。Supabase(Auth + Postgres RLS + 非公開 Storage `meal-photos`)。Anthropic API(`claude-sonnet-5`、`/api/*` のサーバー側のみ)。Vercel(main に push で自動デプロイ)。PHP は使っていない。テスト・CI なし。
+Next.js 16.4.3(App Router。`middleware` は `src/proxy.ts`)/ React 19 / TypeScript / Tailwind v4 / recharts。Supabase(Auth + Postgres RLS + 非公開 Storage `meal-photos`)。Anthropic API(`claude-sonnet-5`、`/api/*` のサーバー側のみ)。Vercel(main に push で自動デプロイ)。PHP は使っていない。テスト・CI なし。
 
 ## 守るルール
 - **認証**: 全ページ・全 `/api/*` は `src/proxy.ts` で未ログインを遮断。新しい API/テーブルを作るときは必ず `user_id` + RLS「自分の行だけ」を付ける。
@@ -21,8 +21,9 @@ Next.js 16.3.2(App Router。`middleware` は `src/proxy.ts`)/ React 19 / TypeScr
 
 ## 現在の状態(2026-10-25)
 - ログイン・ユーザー別データ分離は実装・デプロイ済み(コミット e22c2af)。
-- **未対応(公開前に必須)**: AI 利用回数制限、API 入力長制限、共通 AI 安全プロンプト、Next.js/sharp 更新(16.4.x)、キー再発行、セキュリティヘッダー、プライバシーポリシー・利用規約・アカウント削除、Supabase Auth のメール確認設定。
-- ESLint に 3 エラー(`set-state-in-effect`)あり。
+- **完了**: AI 利用回数制限(`src/lib/ai-guard.ts`、1日あたり chat20/beauty10/todos5/meal_photo10、DB は `consume_ai_quota` 関数)、API 入力長制限、API 内ログイン確認、共通 AI 安全プロンプト(`src/lib/ai-safety.ts`)。Next.js/sharp 更新(0-2)。新しい `/api/*` は必ず「入力チェック → `checkAiAccess(kind)` → `withSafetyRules(prompt)`」の順で作る。
+- **未対応(公開前に必須)**: キー再発行(Anthropic・Notion)と不要な NOTION_* の削除、セキュリティヘッダー、ESLint 3エラー、プライバシーポリシー・利用規約・アカウント削除、Supabase Auth のメール確認設定。
+- 保留: 間接依存 4 件の脆弱性(zod / js-yaml / brace-expansion / source-map-js。本番の外部入力経路ではない)。
 
 ## 次の手順
-`docs/02_roadmap.md` の **フェーズ 0-1(AI 利用制限 + 入力長制限 + API 内ログイン確認 + 共通安全プロンプト)** から。ユーザーの承認後に実装。進捗は `docs/02_roadmap.md` の「進捗メモ」に追記する。
+`docs/02_roadmap.md` のフェーズ 0-3 以降(キー再発行 → セキュリティヘッダー・lint → Supabase Auth 設定 → 規約・アカウント削除)、その後フェーズ 1(MVP)。進捗は `docs/02_roadmap.md` の「進捗メモ」に追記する。

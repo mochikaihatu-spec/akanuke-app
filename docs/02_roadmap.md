@@ -83,3 +83,5 @@ AI は次をしない。共通の system プロンプトを1か所に定義し�
 ## 6. 進捗メモ
 - 2026-10-25: 調査完了、ドキュメント作成。
 - 2026-10-25: フェーズ 0-1 を実装(未コミット)。`011_add_ai_usage_limits.sql` は本番 Supabase に適用済み(匿名での関数実行拒否を確認)。上限は chat 20 / beauty 10 / todos 5 / meal_photo 10 回/日(`src/lib/ai-guard.ts`)。build・tsc OK。**残り: ログイン状態での 429/400 の実機確認 → コミット・プッシュ → 本番確認。**
+- 2026-10-25: フェーズ 0-1 を本番反映(コミット 4383b6d)。本番でチャットが通常どおり返答することをユーザーが確認(=ログイン+回数チェックの正常系OK)。429(上限超過)・400(長文)の実機確認は未実施。次は 0-2(Next.js 16.4.x への更新)。
+- 2026-10-25: 0-2 をブランチ `chore/update-next` で実施。`next` 16.3.2→16.4.3、`eslint-config-next` を同バージョン、`sharp` は next 経由で 0.35.5 に。tsc・build OK、lint は従来の4件のまま。`npm audit` の next/sharp 関連は解消。**残り4件(zod / js-yaml / brace-expansion / source-map-js)は間接依存で、本番の実行経路に外部入力を通らない(zod は Anthropic SDK 内部で本アプリは未使用、他は lint/CSS ビルド用)ため今回は更新せず、保留**(別途 `npm audit fix` を検討)。プレビュー確認後に main へ。
