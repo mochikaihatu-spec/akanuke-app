@@ -37,7 +37,7 @@ summary: string(40文字程度)
 vibe: { title: string, keywords: string[3〜5] }
 elements: [2〜5件]
   { area: 髪|眉|肌|メイク|服|姿勢|体型|清潔感, priority: 1〜3 | null, why: string,
-    actions: [1〜4件] { title, detail, minutes: number, cost_yen: number|null, frequency: string } }
+    actions: [1〜4件] { title, detail, minutes: number, cost_yen: number|null(1か月あたりの目安費用。0=無料、null=不明), frequency: string } }
 weekly: [7件] { day: 1〜7, area, task, minutes }
 notes: string(注意書き1行)
 ```
@@ -63,4 +63,4 @@ notes: string(注意書き1行)
 | 1-7 | プレビューで通しの確認・docs 更新 | 1h | 一連の流れが動く |
 
 ## 進捗
-- 2026-10-27: 設計承認。1-1 の SQL 作成(ブランチ `feat/phase1-plan`)。ユーザーの SQL 実行待ち。
+- 2026-10-27: 設計承認。1-1 完了(013 を本番 Supabase に適用、未ログインの読み書き拒否を確認)。1-2 完了(`src/lib/plan-schema.ts` + `npm test` 17件成功)。次は 1-3(`/api/plan`)。

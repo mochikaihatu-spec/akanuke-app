@@ -7,6 +7,7 @@ export const AI_DAILY_LIMITS = {
   beauty: 10,
   todos: 5,
   meal_photo: 10,
+  plan: 3,
 } as const
 
 export type AiKind = keyof typeof AI_DAILY_LIMITS
