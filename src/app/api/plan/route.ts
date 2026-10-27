@@ -36,6 +36,8 @@ export async function POST() {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-5',
       max_tokens: 3000,
+      // 「考える」文章も max_tokens に数えられ、プラン本体が途中で切れるため無効にする
+      thinking: { type: 'disabled' },
       system: withSafetyRules(PLAN_SYSTEM_PROMPT),
       messages: [{ role: 'user', content: buildPlanUserMessage(ideal.value) }],
     })
