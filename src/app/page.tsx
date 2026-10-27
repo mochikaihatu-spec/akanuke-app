@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getUserId, supabase } from '@/lib/supabase'
 import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
+import PlanCard from '@/components/PlanCard'
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true)
@@ -251,6 +252,8 @@ export default function HomePage() {
         {error && (
           <p className="text-center text-sm font-medium text-red-600">{error}</p>
         )}
+
+        <PlanCard />
 
         <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">

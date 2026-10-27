@@ -60,9 +60,20 @@ function BeautyIcon() {
   )
 }
 
+function PlanIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 21V4" />
+      <path d="M6 5h11.5l-2.3 3.7 2.3 3.8H6" />
+    </svg>
+  )
+}
+
+// タブが増えても1行に収まるよう、短い名前にしている(プロフィール画面=「設定」)
 const ALL_TABS = [
   { href: '/', label: 'ホーム', Icon: HomeIcon, key: null as 'use_workout' | 'use_beauty' | null },
-  { href: '/profile', label: 'プロフィール', Icon: ProfileIcon, key: null },
+  { href: '/plan', label: 'プラン', Icon: PlanIcon, key: null },
+  { href: '/profile', label: '設定', Icon: ProfileIcon, key: null },
   { href: '/meals', label: '食事記録', Icon: MealsIcon, key: null },
   { href: '/weight', label: '体重', Icon: WeightIcon, key: null },
   { href: '/workout', label: '筋トレ', Icon: WorkoutIcon, key: 'use_workout' },
