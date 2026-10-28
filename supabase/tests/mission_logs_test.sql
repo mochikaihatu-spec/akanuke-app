@@ -84,16 +84,31 @@ begin
   select count(*) into n from mission_logs where mission_date = date '2000-01-01';
   r := r || case when n = 0 then 'OK  ' else 'NG  ' end || '8. 自分の記録を取り消せる(戻す)' || E'\n';
 
-  -- 9) 未ログインでは何もできない
+  -- 9) 未ログイン(anon)からは、本人の記録があっても見えず、書き込めない
+  --    (表への読み取り自体は許されるが、行ごとの制限で 0 件になるのが Supabase の標準の動き)
+  execute 'reset role';
+  perform set_config('request.jwt.claim.sub', uid::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', uid::text, 'role', 'authenticated')::text, true);
+  execute 'set local role authenticated';
+  insert into mission_logs (plan_id, mission_date, day_index, area, task, minutes, status)
+  values (pid, date '2000-01-09', 1, '肌', 'テスト', 5, 'done');
+
   execute 'reset role';
   perform set_config('request.jwt.claim.sub', '', true);
   perform set_config('request.jwt.claims', '', true);
   execute 'set local role anon';
+
+  select count(*) into n from mission_logs;
+  r := r || case when n = 0 then 'OK  ' else 'NG  ' end || '9a. 未ログインからは1件も見えない(本人の記録があっても)' || E'
+';
+
   begin
-    perform 1 from mission_logs limit 1;
+    insert into mission_logs (user_id, plan_id, mission_date, day_index, area, task, minutes, status)
+    values (uid, pid, date '2000-01-10', 1, '肌', 'テスト', 5, 'done');
     ok := false;
-  exception when insufficient_privilege then ok := true; when others then ok := false; end;
-  r := r || case when ok then 'OK  ' else 'NG  ' end || '9. 未ログイン(anon)は表に触れない' || E'\n';
+  exception when others then ok := true; end;
+  r := r || case when ok then 'OK  ' else 'NG  ' end || '9b. 未ログインからは書き込めない' || E'
+';
 
   execute 'reset role';
   raise exception E'\n===== テスト結果(このエラーは正常です。変更はすべて取り消されました) =====\n%', r;
