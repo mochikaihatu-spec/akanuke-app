@@ -33,4 +33,4 @@ Next.js 16.4.3(App Router。`middleware` は `src/proxy.ts`)/ React 19 / TypeScr
 - **フェーズ3(AI 相談でプラン調整)**: AI は「差分(patch)」だけを返し、アプリが `plan-patch.ts` で検査・適用・変更前後の比較をして見せ、**ユーザーが承認するまでプランは変わらない**。調整案は `plan_proposals`、承認は `/api/plan/apply`(AI なし)→ DB 関数 `save_adjusted_plan`(元は履歴、`cycle_start` を引き継いでサイクル継続)。相談は専用の回数 `plan_adjust`(無料月5/有料月20)。ミッションの「何日目か」は `plans.cycle_start` から数える。設計は `docs/06_phase3_design.md`。試験は `supabase/tests/plan_adjustment_test.sql`。
 
 ## 次の手順
-フェーズ0〜2(安全対策・プラン作成・今日のミッション)は完了。`docs/02_roadmap.md` の **フェーズ3(AI 相談でプランを調整。AI は提案だけ、ユーザーが承認してから反映)** から。進捗は `docs/02_roadmap.md` の「進捗メモ」に追記する。
+フェーズ0〜3(安全対策・プラン作成・今日のミッション・AI 相談でプラン調整)は完了・本番反映済み = MVP の機能はそろった。次は (1) 友人数名に使ってもらう検証(`ai_usage_logs` の トークン数から1人あたりの AI 原価を計算し、680円・各回数の妥当性を確認)、(2) 公開前の宿題(Notion トークン無効化・独自SMTP・CAPTCHA・規約の専門家確認)、(3) 決済(Stripe 等。`subscriptions` を webhook で更新)、(4) フェーズ4(ホーム/ナビの再構成)。進捗は `docs/02_roadmap.md` の「進捗メモ」に追記する。
