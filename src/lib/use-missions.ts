@@ -14,7 +14,7 @@ export function useMissionLogs() {
     const since = addDays(jstDateString(new Date()), -400)
     const { data, error: loadError } = await supabase
       .from('mission_logs')
-      .select('mission_date, status, area')
+      .select('mission_date, status, area, task')
       .gte('mission_date', since)
       .order('mission_date', { ascending: false })
 

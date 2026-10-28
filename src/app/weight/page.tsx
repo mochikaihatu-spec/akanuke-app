@@ -115,13 +115,13 @@ export default function WeightPage() {
                 data={points}
                 margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e3ded6" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  tick={{ fontSize: 12, fill: '#5f5a66' }}
                 />
                 <YAxis
-                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  tick={{ fontSize: 12, fill: '#5f5a66' }}
                   domain={[
                     (min: number) =>
                       Math.floor(
@@ -138,27 +138,27 @@ export default function WeightPage() {
                   contentStyle={{
                     fontSize: 12,
                     borderRadius: 12,
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid #e3ded6',
                   }}
                 />
                 <Line
                   type="monotone"
                   dataKey="weight"
                   name="体重"
-                  stroke="#2563eb"
+                  stroke="#6f5b91"
                   strokeWidth={2.5}
-                  dot={{ r: 3, fill: '#2563eb', strokeWidth: 0 }}
+                  dot={{ r: 3, fill: '#6f5b91', strokeWidth: 0 }}
                   activeDot={{ r: 5 }}
                 />
                 {targetWeightKg !== null && (
                   <ReferenceLine
                     y={targetWeightKg}
-                    stroke="#94a3b8"
+                    stroke="#6e6874"
                     strokeDasharray="6 4"
                     label={{
                       value: '目標体重',
                       position: 'insideTopRight',
-                      fill: '#64748b',
+                      fill: '#5f5a66',
                       fontSize: 12,
                     }}
                   />

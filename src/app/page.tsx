@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getUserId, supabase } from '@/lib/supabase'
 import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
-import PlanCard from '@/components/PlanCard'
-import MissionCard from '@/components/MissionCard'
+import HomeCoach from '@/components/HomeCoach'
+import { UserIcon } from '@/components/icons'
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true)
@@ -226,206 +226,182 @@ export default function HomePage() {
       ? Math.min(100, (totalCalories / targetCalories) * 100)
       : 0
 
-  const todayLabel = new Date().toLocaleDateString('ja-JP', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  })
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-slate-400">読み込み中...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex min-h-screen justify-center bg-slate-50 px-4 py-10">
+    <div className="flex min-h-screen justify-center bg-slate-50 px-4 pb-10 pt-8">
       <div className="flex w-full max-w-sm flex-col gap-6">
-        <div>
-          <p className="text-sm font-medium text-slate-400">{todayLabel}</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            今日の進み具合
-          </h1>
-        </div>
-
-        {error && (
-          <p className="text-center text-sm font-medium text-red-600">{error}</p>
-        )}
-
-        <MissionCard />
-
-        <PlanCard />
-
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-500">今日のToDo</p>
-            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-medium text-blue-600">
-              AI提案
-            </span>
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Akanuke / Your glow-up journey
+            </p>
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-900">
+              憧れに、一歩近づく。
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">今日できることから始めよう。</p>
           </div>
-
-          {todosLoading ? (
-            <p className="mt-3 text-sm text-slate-400">考え中...</p>
-          ) : todosError ? (
-            <p className="mt-3 text-sm text-red-600">{todosError}</p>
-          ) : todos.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-400">
-              今日はこれといってやることはなさそうです
-            </p>
-          ) : (
-            <ul className="mt-3 flex flex-col gap-2.5">
-              {todos.map((todo, index) => (
-                <li key={index} className="flex items-start gap-2.5 text-sm text-slate-900">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />
-                  <span className="leading-relaxed">{todo}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">
-            {targetCalories === null
-              ? '今日の摂取カロリー'
-              : caloriesOver
-                ? '目標カロリーをオーバーしています'
-                : '今日、あと食べられるカロリー'}
-          </p>
-
-          <p
-            className={`mt-1 text-5xl font-bold tracking-tight ${
-              caloriesOver ? 'text-red-600' : 'text-blue-600'
-            }`}
-          >
-            {targetCalories === null
-              ? totalCalories
-              : caloriesOver
-                ? Math.abs(remainingCalories ?? 0)
-                : remainingCalories}
-            <span className="ml-1 text-lg font-medium text-slate-400">kcal</span>
-          </p>
-
-          {targetCalories !== null ? (
-            <>
-              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className={`h-full rounded-full ${
-                    caloriesOver ? 'bg-red-500' : 'bg-blue-600'
-                  }`}
-                  style={{ width: `${calorieProgress}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-slate-400">
-                摂取 {totalCalories} / 目標 {targetCalories} kcal
-              </p>
-            </>
-          ) : (
-            <Link href="/profile" className="mt-3 inline-block text-xs font-medium text-blue-600">
-              目標カロリーを設定する →
-            </Link>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium text-slate-500">タンパク質</p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-              {totalProtein.toFixed(0)}
-              <span className="text-sm font-medium text-slate-400"> g</span>
-            </p>
-            <p
-              className={`mt-1 text-xs font-medium ${
-                remainingProtein !== null && remainingProtein < 0
-                  ? 'text-blue-600'
-                  : 'text-slate-400'
-              }`}
-            >
-              {remainingProtein === null
-                ? '目標未設定'
-                : remainingProtein < 0
-                  ? `目標達成 +${Math.abs(remainingProtein).toFixed(0)}g`
-                  : `あと ${remainingProtein.toFixed(0)}g`}
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-medium text-slate-500">体重</p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-              {weightKg !== null ? weightKg : '—'}
-              <span className="text-sm font-medium text-slate-400"> kg</span>
-            </p>
-            <p className="mt-1 text-xs font-medium text-slate-400">
-              {targetWeightKg !== null ? `目標 ${targetWeightKg} kg` : '目標未設定'}
-            </p>
-          </div>
-
-          {useWorkout && (
-            <div className="col-span-2 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-medium text-slate-500">筋トレ</p>
-              <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-                {workoutCountToday}
-                <span className="text-sm font-medium text-slate-400"> 種目</span>
-              </p>
-              <p className="mt-1 text-xs font-medium text-slate-400">
-                {lastExerciseName
-                  ? `直近の記録: ${lastExerciseName}`
-                  : 'まだ記録がありません'}
-              </p>
-            </div>
-          )}
-
-          {useBeauty && (
-            <div className="col-span-2 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-              <p className="text-xs font-medium text-slate-500">美容</p>
-              <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
-                {latestBeautyCategories ? latestBeautyCategories.join('・') : '—'}
-              </p>
-              <p className="mt-1 text-xs font-medium text-slate-400">
-                {latestBeautyCategories ? '最近のプラン' : 'まだ相談していません'}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <Link
-            href="/meals"
-            className="rounded-xl bg-blue-600 py-3 text-center text-base font-medium text-white transition-colors"
-          >
-            食事を記録する
-          </Link>
-          {useWorkout && (
-            <Link
-              href="/workout"
-              className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
-            >
-              筋トレを記録する
-            </Link>
-          )}
           <Link
             href="/profile"
-            className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
+            aria-label="プロフィール・設定"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-100 bg-white text-blue-700 shadow-sm transition-colors active:bg-slate-50"
           >
-            体重を記録する
+            <span className="h-5 w-5">
+              <UserIcon />
+            </span>
           </Link>
-          {useBeauty && (
-            <Link
-              href="/beauty"
-              className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
-            >
-              美容相談をする
-            </Link>
+        </header>
+
+        <HomeCoach />
+
+        <section aria-label="きょうの記録" className="flex flex-col gap-4">
+          <h2 className="text-base font-semibold text-slate-900">きょうの記録</h2>
+
+          {error && <p className="text-center text-sm font-medium text-red-600">{error}</p>}
+
+          {loading ? (
+            <div className="h-40 animate-pulse rounded-3xl border border-slate-100 bg-white" aria-busy="true" />
+          ) : (
+            <>
+            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-500">今日のToDo</p>
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-medium text-blue-600">
+                  AI提案
+                </span>
+              </div>
+
+              {todosLoading ? (
+                <p className="mt-3 text-sm text-slate-400">考え中...</p>
+              ) : todosError ? (
+                <p className="mt-3 text-sm text-red-600">{todosError}</p>
+              ) : todos.length === 0 ? (
+                <p className="mt-3 text-sm text-slate-400">
+                  今日はこれといってやることはなさそうです
+                </p>
+              ) : (
+                <ul className="mt-3 flex flex-col gap-2.5">
+                  {todos.map((todo, index) => (
+                    <li key={index} className="flex items-start gap-2.5 text-sm text-slate-900">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />
+                      <span className="leading-relaxed">{todo}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+              <p className="text-sm font-medium text-slate-500">
+                {targetCalories === null
+                  ? '今日の摂取カロリー'
+                  : caloriesOver
+                    ? '目標カロリーをオーバーしています'
+                    : '今日、あと食べられるカロリー'}
+              </p>
+
+              <p
+                className={`mt-1 text-5xl font-bold tracking-tight ${
+                  caloriesOver ? 'text-red-600' : 'text-blue-600'
+                }`}
+              >
+                {targetCalories === null
+                  ? totalCalories
+                  : caloriesOver
+                    ? Math.abs(remainingCalories ?? 0)
+                    : remainingCalories}
+                <span className="ml-1 text-lg font-medium text-slate-400">kcal</span>
+              </p>
+
+              {targetCalories !== null ? (
+                <>
+                  <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={`h-full rounded-full ${
+                        caloriesOver ? 'bg-red-500' : 'bg-blue-600'
+                      }`}
+                      style={{ width: `${calorieProgress}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">
+                    摂取 {totalCalories} / 目標 {targetCalories} kcal
+                  </p>
+                </>
+              ) : (
+                <Link href="/profile" className="mt-3 inline-block text-xs font-medium text-blue-600">
+                  目標カロリーを設定する →
+                </Link>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                <p className="text-xs font-medium text-slate-500">タンパク質</p>
+                <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+                  {totalProtein.toFixed(0)}
+                  <span className="text-sm font-medium text-slate-400"> g</span>
+                </p>
+                <p
+                  className={`mt-1 text-xs font-medium ${
+                    remainingProtein !== null && remainingProtein < 0
+                      ? 'text-blue-600'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {remainingProtein === null
+                    ? '目標未設定'
+                    : remainingProtein < 0
+                      ? `目標達成 +${Math.abs(remainingProtein).toFixed(0)}g`
+                      : `あと ${remainingProtein.toFixed(0)}g`}
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                <p className="text-xs font-medium text-slate-500">体重</p>
+                <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+                  {weightKg !== null ? weightKg : '—'}
+                  <span className="text-sm font-medium text-slate-400"> kg</span>
+                </p>
+                <p className="mt-1 text-xs font-medium text-slate-400">
+                  {targetWeightKg !== null ? `目標 ${targetWeightKg} kg` : '目標未設定'}
+                </p>
+              </div>
+
+              {useWorkout && (
+                <div className="col-span-2 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                  <p className="text-xs font-medium text-slate-500">筋トレ</p>
+                  <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+                    {workoutCountToday}
+                    <span className="text-sm font-medium text-slate-400"> 種目</span>
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-400">
+                    {lastExerciseName
+                      ? `直近の記録: ${lastExerciseName}`
+                      : 'まだ記録がありません'}
+                  </p>
+                </div>
+              )}
+
+              {useBeauty && (
+                <div className="col-span-2 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                  <p className="text-xs font-medium text-slate-500">美容</p>
+                  <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+                    {latestBeautyCategories ? latestBeautyCategories.join('・') : '—'}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-400">
+                    {latestBeautyCategories ? '最近のプラン' : 'まだ相談していません'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+              <Link
+                href="/meals"
+                className="flex min-h-12 items-center justify-center rounded-2xl bg-blue-600 text-base font-semibold text-white transition-colors active:bg-blue-700"
+              >
+                食事を記録する
+              </Link>
+            </>
           )}
-          <Link
-            href="/chat"
-            className="rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors"
-          >
-            AIに相談する
-          </Link>
-        </div>
+        </section>
       </div>
     </div>
   )

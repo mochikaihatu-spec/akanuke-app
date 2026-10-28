@@ -1,19 +1,63 @@
 @import "tailwindcss";
 
+/*
+  アカヌケのデザインの土台(色・文字)
+  - 既存の画面は slate(灰青)と blue(青)のクラスで書かれているので、その色の定義をここで差し替える。
+    こうすると、画面ごとに書き換えなくても、アプリ全体が同じ配色にそろう。
+  - 役割: slate = 温かみのあるニュートラル(背景・文字・線) / blue = メインのラベンダー
+  - 文字として使う色は、背景との明るさの差(コントラスト比)が 4.5 以上になるように選んである
+*/
+@theme {
+  /* ニュートラル(50=ページの背景、100〜200=線、400〜900=文字) */
+  --color-slate-50: #f7f5f1;
+  --color-slate-100: #efebe4;
+  --color-slate-200: #e3ded6;
+  --color-slate-300: #cdc7bf;
+  --color-slate-400: #6e6874;
+  --color-slate-500: #5f5a66;
+  --color-slate-600: #4a4552;
+  --color-slate-700: #3a3541;
+  --color-slate-800: #312c37;
+  --color-slate-900: #29252e;
+
+  /* メイン: ラベンダー(500=飾り用、600=ボタン・リンク。白文字との比 5.9) */
+  --color-blue-50: #f3eff8;
+  --color-blue-100: #eae3f1;
+  --color-blue-200: #d9cce8;
+  --color-blue-300: #bfaad6;
+  --color-blue-400: #a28abf;
+  --color-blue-500: #8b77a9;
+  --color-blue-600: #6f5b91;
+  --color-blue-700: #5a4875;
+  --color-blue-800: #453759;
+  --color-blue-900: #33293f;
+
+  /* 補助色(機能カードの区別用。50=背景、600=アイコン・文字) */
+  --color-sage-50: #e4ebe4;
+  --color-sage-600: #4f6f5b;
+  --color-coral-50: #f8e7e1;
+  --color-coral-600: #9a4836;
+  --color-sand-50: #f3ebdd;
+  --color-sand-600: #7a6420;
+
+  --font-sans:
+    var(--font-geist-sans), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI",
+    "Yu Gothic", Meiryo, sans-serif;
+}
+
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f7f5f1;
+  --foreground: #29252e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }

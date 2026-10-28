@@ -9,6 +9,7 @@ export type MissionLog = {
   mission_date: string // 'YYYY-MM-DD'(日本時間)
   status: MissionStatus
   area: string
+  task?: string // 記録した時点のやること(履歴の表示用)
 }
 
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000

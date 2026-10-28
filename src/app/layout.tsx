@@ -25,11 +25,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <div className="flex-1 pb-20">{children}</div>
+        <div className="flex-1 pb-24">{children}</div>
         <BottomNav />
       </body>
     </html>

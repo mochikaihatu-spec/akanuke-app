@@ -16,7 +16,7 @@ Next.js 16.4.3(App Router。`middleware` は `src/proxy.ts`)/ React 19 / TypeScr
 - **禁止(許可なし)**: DB 削除、認証設定の変更、環境変数の上書き、本番への破壊的操作、無差別なパッケージ更新。
 - **AI の安全ルール**: 整形・医療行為の推奨、診断、容姿の採点/ランク付け、特定の実在人物との類似の断定/約束、極端な食事制限は禁止。AI はプランを JSON で返し、画面は決まった UI で描画する(AI に画面を自由に作らせない)。ユーザー承認済みプランを黙って変えない。
 - **開発**: 小さなタスク・最小変更・変更前に計画提示・変更後に build/動作確認・コミット/プッシュ前にユーザーに確認。大規模リファクタ禁止。
-- UI: スレート基調+青アクセント、カードは `rounded-3xl border border-slate-100 bg-white p-6 shadow-sm`。
+- UI: 色は `src/app/globals.css` で定義(`slate-*`=温かみのあるニュートラル、`blue-*`=ラベンダー、補助色 `sage`/`coral`/`sand`)。**新しい色を足さず、既存の `slate-*` / `blue-*` と共通部品(`icons.tsx`・`FeatureCard`・`MissionCard`・`WeekProgress`)を使う**。文字色は背景とのコントラスト比 4.5 以上に。カードは `rounded-3xl border border-slate-100 bg-white p-6 shadow-sm`、ボタンは高さ 48px 以上。下タブは4つ(ホーム/マイプラン/AI相談/記録。`BottomNav`)、プロフィールはホーム右上のアイコンから。詳細は `docs/08_phase4_design.md`。
 - `AGENTS.md` は `next dev` が管理する(編集しない)。`CLAUDE.md` は自由に編集してよい(`@AGENTS.md` の行は残す)。
 
 ## 現在の状態(2026-10-25)

@@ -20,12 +20,6 @@ async function updateMyProfile(values: Record<string, unknown>) {
   return Boolean(error) || !data || data.length === 0
 }
 
-function broadcastFeatureFlag(key: 'use_workout' | 'use_beauty', value: boolean) {
-  window.dispatchEvent(
-    new CustomEvent('akanuke:feature-flags-changed', { detail: { key, value } })
-  )
-}
-
 const inputClass =
   'rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100'
 const labelClass = 'text-sm font-medium text-slate-600'
@@ -120,7 +114,6 @@ export default function ProfilePage() {
       return
     }
 
-    broadcastFeatureFlag('use_workout', value)
   }
 
   async function handleToggleUseBeauty(value: boolean) {
@@ -135,7 +128,6 @@ export default function ProfilePage() {
       return
     }
 
-    broadcastFeatureFlag('use_beauty', value)
   }
 
   async function handleLogout() {
