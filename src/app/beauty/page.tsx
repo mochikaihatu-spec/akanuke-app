@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
+import { useUsage } from '@/lib/use-usage'
+import UsageNote from '@/components/UsageNote'
 import FaceDiagram, { type FaceIllustration, type FacePart } from '@/components/FaceDiagram'
 
 const cardClass = 'rounded-3xl border border-slate-100 bg-white p-6 shadow-sm'
@@ -227,6 +229,7 @@ export default function BeautyPage() {
   const [selectedGoals, setSelectedGoals] = useState<string[]>([])
   const [concern, setConcern] = useState('')
   const [sending, setSending] = useState(false)
+  const { usage, reload: reloadUsage } = useUsage()
   const [error, setError] = useState('')
 
   const [history, setHistory] = useState<Consultation[]>([])
@@ -342,6 +345,7 @@ export default function BeautyPage() {
       setError(aiErrorMessage(e, '回答の取得に失敗しました。もう一度お試しください'))
     } finally {
       setSending(false)
+      reloadUsage()
     }
   }
 
@@ -522,6 +526,8 @@ export default function BeautyPage() {
             </p>
           )}
         </div>
+
+        <UsageNote item={usage?.items.beauty} />
 
         <div className={cardClass}>
           <h2 className="mb-4 text-base font-semibold text-slate-900">

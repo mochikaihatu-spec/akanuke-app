@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
-import { badRequest, checkAiAccess } from '@/lib/ai-guard'
+import { anthropicOptions } from '@/lib/ai-config'
+import { badRequest, beginAiRequest, finishAiRequest, type AiOutcome } from '@/lib/ai-guard'
 import { withSafetyRules } from '@/lib/ai-safety'
 import { buildPlanUserMessage, parsePlanReply, PLAN_SYSTEM_PROMPT } from '@/lib/plan-prompt'
 import { validateIdealInput } from '@/lib/plan-schema'
@@ -29,18 +30,20 @@ export async function POST() {
   const ideal = validateIdealInput(row)
   if (!ideal.ok) return badRequest(ideal.error)
 
-  const blocked = await checkAiAccess('plan')
-  if (blocked) return blocked
+  const access = await beginAiRequest('plan')
+  if (!access.ok) return access.response
+
+  // 成功したと確定するまでは失敗扱い(失敗なら回数に数えない)
+  let outcome: AiOutcome = { success: false }
 
   try {
+    const options = anthropicOptions('plan')
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 3000,
-      // 「考える」文章も max_tokens に数えられ、プラン本体が途中で切れるため無効にする
-      thinking: { type: 'disabled' },
+      ...options,
       system: withSafetyRules(PLAN_SYSTEM_PROMPT),
       messages: [{ role: 'user', content: buildPlanUserMessage(ideal.value) }],
     })
+    outcome = { success: false, model: options.model, usage: message.usage }
 
     const textBlock = message.content.find((block) => block.type === 'text')
     const rawText = textBlock && 'text' in textBlock ? textBlock.text : ''
@@ -49,7 +52,7 @@ export async function POST() {
     if (!plan.ok) {
       console.error('Plan: invalid AI reply:', plan.error, '| stop_reason:', message.stop_reason)
       return NextResponse.json(
-        { error: 'プランの作成に失敗しました。もう一度お試しください' },
+        { error: 'プランの作成に失敗しました。もう一度お試しください(今回は回数に数えません)' },
         { status: 502 }
       )
     }
@@ -64,9 +67,12 @@ export async function POST() {
       return NextResponse.json({ error: 'プランの保存に失敗しました' }, { status: 500 })
     }
 
+    outcome = { ...outcome, success: true }
     return NextResponse.json({ id: planId })
   } catch (error) {
     console.error('Plan generation error:', error)
     return NextResponse.json({ error: 'AIとの通信に失敗しました' }, { status: 500 })
+  } finally {
+    await finishAiRequest(access.session, outcome)
   }
 }

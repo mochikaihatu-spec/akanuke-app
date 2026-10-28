@@ -64,3 +64,4 @@ notes: string(注意書き1行)
 
 ## 進捗
 - 2026-10-27: 設計承認。1-1 完了(013 を本番 Supabase に適用、未ログインの読み書き拒否を確認)。1-2 完了(`src/lib/plan-schema.ts` + `npm test` 17件成功)。1-3 実装(`/api/plan`・`plan-prompt.ts`・上限 plan:3/日)、1-4 `/onboarding`、1-5 `/plan`、1-6 ホームの `PlanCard`・下タブ「プラン」(プロフィールのタブ名は「設定」に短縮)・プライバシーポリシー追記を実装済み(ブランチ `feat/phase1-plan`)。tsc/lint/build/`npm test` OK。**残り: 1-7 プレビューで通しの確認(ユーザー)。AIの出力品質(プロンプト)は実機で確認・調整する。**
+- 2026-10-28: フェーズ1を本番反映(fdba7f5)。続けて **料金プラン・利用制限の変更**(ブランチ `feat/usage-limits-tiers`、設計は `docs/04_usage_limits_and_tiers.md`)。

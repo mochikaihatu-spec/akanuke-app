@@ -1,6 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
-import { AI_INPUT_LIMITS, badRequest, checkAiAccess, readJsonBody } from '@/lib/ai-guard'
+import { anthropicOptions } from '@/lib/ai-config'
+import {
+  AI_INPUT_LIMITS,
+  badRequest,
+  beginAiRequest,
+  finishAiRequest,
+  readJsonBody,
+  type AiOutcome,
+} from '@/lib/ai-guard'
 import { withSafetyRules } from '@/lib/ai-safety'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -104,8 +112,8 @@ export async function POST(request: Request) {
     return badRequest('データの取得に失敗しました')
   }
 
-  const blocked = await checkAiAccess('chat')
-  if (blocked) return blocked
+  const access = await beginAiRequest('chat')
+  if (!access.ok) return access.response
 
   const systemPrompt = withSafetyRules(`あなたはダイエット・食事管理をサポートするアシスタントです。ユーザーの今日の食事記録と目標が以下の通り与えられます。この情報をもとに、質問にわかりやすい日本語で答えてください。
 
@@ -117,22 +125,29 @@ ${buildSummary(context)}
   "detail": "詳しいアドバイス。長くなりすぎないよう400文字程度まで"
 }`)
 
+  // 成功と確定するまでは失敗扱い(失敗なら回数に数えない)
+  let outcome: AiOutcome = { success: false }
+
   try {
+    const options = anthropicOptions('chat')
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 1200,
+      ...options,
       system: systemPrompt,
       messages: [{ role: 'user', content: question }],
     })
+    outcome = { success: false, model: options.model, usage: message.usage }
 
     const textBlock = message.content.find((block) => block.type === 'text')
     const rawText = textBlock && 'text' in textBlock ? textBlock.text : ''
 
     const { summary, detail } = extractReply(rawText)
 
+    outcome = { ...outcome, success: true }
     return NextResponse.json({ summary, detail })
   } catch (error) {
     console.error('Anthropic API error:', error)
     return NextResponse.json({ error: 'AIとの通信に失敗しました' }, { status: 500 })
+  } finally {
+    await finishAiRequest(access.session, outcome)
   }
 }

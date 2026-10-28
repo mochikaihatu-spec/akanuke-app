@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getUserId, supabase } from '@/lib/supabase'
 import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
+import { useUsage } from '@/lib/use-usage'
+import UsageNote from '@/components/UsageNote'
 import {
   AREAS,
   DAILY_MINUTES,
@@ -41,6 +43,9 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const { usage, reload: reloadUsage } = useUsage()
+  const planUsage = usage?.items.plan
+  const outOfPlans = planUsage !== undefined && planUsage.remaining === 0
 
   // 前に答えた内容があれば復元する
   useEffect(() => {
@@ -119,6 +124,7 @@ export default function OnboardingPage() {
     } catch (err) {
       setError(aiErrorMessage(err, 'プランの作成に失敗しました。もう一度お試しください'))
       setSubmitting(false)
+      reloadUsage()
     }
   }
 
@@ -245,9 +251,11 @@ export default function OnboardingPage() {
             />
           </label>
 
+          <UsageNote item={planUsage} />
+
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || outOfPlans}
             className="rounded-xl bg-blue-600 py-3 text-base font-medium text-white transition-colors disabled:opacity-50"
           >
             {submitting ? 'プランを作っています...(30秒ほど)' : hasPlan ? 'プランを作り直す' : 'プランを作る'}

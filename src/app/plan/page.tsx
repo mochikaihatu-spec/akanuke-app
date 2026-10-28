@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useUsage } from '@/lib/use-usage'
+import UsageNote from '@/components/UsageNote'
 import {
   MONTHLY_BUDGETS,
   totalMonthlyCost,
@@ -36,6 +38,7 @@ export default function PlanPage() {
   const [saved, setSaved] = useState<SavedPlan | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const { usage } = useUsage()
 
   useEffect(() => {
     async function load() {
@@ -199,14 +202,17 @@ export default function PlanPage() {
 
         <p className="mt-6 text-center text-xs leading-relaxed text-slate-400">{plan.notes}</p>
 
+        <div className="mt-6">
+          <UsageNote item={usage?.items.plan} />
+        </div>
         <Link
           href="/onboarding"
-          className="mt-6 block rounded-xl border border-slate-200 bg-white py-3 text-center text-base font-medium text-slate-600"
+          className="mt-3 block rounded-xl border border-slate-200 bg-white py-3 text-center text-base font-medium text-slate-600"
         >
           答えを変えてプランを作り直す
         </Link>
         <p className="mt-3 text-center text-xs text-slate-400">
-          作り直しても、今のプランは履歴として保存されます
+          作り直しても、今のプランは履歴として保存されます。作り直しは「プラン作成」の回数に数えます
         </p>
       </div>
     </div>

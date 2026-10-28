@@ -1,6 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
-import { AI_INPUT_LIMITS, badRequest, checkAiAccess, readJsonBody } from '@/lib/ai-guard'
+import { anthropicOptions } from '@/lib/ai-config'
+import {
+  AI_INPUT_LIMITS,
+  badRequest,
+  beginAiRequest,
+  finishAiRequest,
+  readJsonBody,
+  type AiOutcome,
+} from '@/lib/ai-guard'
 import { withSafetyRules } from '@/lib/ai-safety'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -16,8 +24,8 @@ export async function POST(request: Request) {
     return badRequest('データが大きすぎます')
   }
 
-  const blocked = await checkAiAccess('todos')
-  if (blocked) return blocked
+  const access = await beginAiRequest('todos')
+  if (!access.ok) return access.response
 
   const systemPrompt = withSafetyRules(`あなたは健康管理アプリのアシスタントです。ユーザーの今日のデータ(JSON)をもとに、今日の「ToDo」を考えてください。
 
@@ -31,13 +39,17 @@ export async function POST(request: Request) {
 必ず次のJSON形式のみで回答してください。説明文や前置きは一切書かないでください。
 {"items": ["短い行動提案1", "短い行動提案2"]}`)
 
+  // 成功と確定するまでは失敗扱い(失敗なら回数に数えない)
+  let outcome: AiOutcome = { success: false }
+
   try {
+    const options = anthropicOptions('todos')
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 400,
+      ...options,
       system: systemPrompt,
       messages: [{ role: 'user', content: JSON.stringify(context) }],
     })
+    outcome = { success: false, model: options.model, usage: message.usage }
 
     const textBlock = message.content.find((block) => block.type === 'text')
     const rawText = textBlock && 'text' in textBlock ? textBlock.text : ''
@@ -52,9 +64,12 @@ export async function POST(request: Request) {
       ? parsed.items.filter((i: unknown) => typeof i === 'string').slice(0, 3)
       : []
 
+    outcome = { ...outcome, success: true }
     return NextResponse.json({ items })
   } catch (error) {
     console.error('Todo generation error:', error)
     return NextResponse.json({ error: 'ToDoの生成に失敗しました' }, { status: 500 })
+  } finally {
+    await finishAiRequest(access.session, outcome)
   }
 }

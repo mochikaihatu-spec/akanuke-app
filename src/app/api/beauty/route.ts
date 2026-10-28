@@ -1,6 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
-import { AI_INPUT_LIMITS, badRequest, checkAiAccess, readJsonBody } from '@/lib/ai-guard'
+import { anthropicOptions } from '@/lib/ai-config'
+import {
+  AI_INPUT_LIMITS,
+  badRequest,
+  beginAiRequest,
+  finishAiRequest,
+  readJsonBody,
+  type AiOutcome,
+} from '@/lib/ai-guard'
 import { withSafetyRules } from '@/lib/ai-safety'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -26,8 +34,8 @@ export async function POST(request: Request) {
     return badRequest(`相談内容は${AI_INPUT_LIMITS.concernChars}文字以内で入力してください`)
   }
 
-  const blocked = await checkAiAccess('beauty')
-  if (blocked) return blocked
+  const access = await beginAiRequest('beauty')
+  if (!access.ok) return access.response
 
   const systemPrompt = withSafetyRules(`あなたは美容・垢抜けに関する相談に乗るアシスタントです。ユーザーが選んだ気になる部分や、なりたい印象・気になる点をもとに、日本語で具体的な行動につながるアドバイスをしてください。
 
@@ -50,23 +58,39 @@ items は2〜4件にしてください。`)
   const userMessage = `気になる部分: ${categories.join('、')}
 ${concern ? concern : '(詳細の記入なし)'}`
 
+  // 成功と確定するまでは失敗扱い(失敗なら回数に数えない)
+  let outcome: AiOutcome = { success: false }
+
   try {
+    const options = anthropicOptions('beauty')
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
-      max_tokens: 1200,
+      ...options,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
     })
+    outcome = { success: false, model: options.model, usage: message.usage }
 
     const textBlock = message.content.find((block) => block.type === 'text')
     const rawText = textBlock && 'text' in textBlock ? textBlock.text : ''
 
+    // 空、または途中で切れた回答は失敗として扱う
+    if (rawText.trim() === '' || message.stop_reason === 'max_tokens') {
+      console.error('Beauty: unusable AI reply | stop_reason:', message.stop_reason)
+      return NextResponse.json(
+        { error: '回答の作成に失敗しました。もう一度お試しください(今回は回数に数えません)' },
+        { status: 502 }
+      )
+    }
+
     const jsonMatch = rawText.match(/\{[\s\S]*\}/)
     const answer = jsonMatch ? jsonMatch[0] : rawText
 
+    outcome = { ...outcome, success: true }
     return NextResponse.json({ answer })
   } catch (error) {
     console.error('Anthropic API error:', error)
     return NextResponse.json({ error: 'AIとの通信に失敗しました' }, { status: 500 })
+  } finally {
+    await finishAiRequest(access.session, outcome)
   }
 }

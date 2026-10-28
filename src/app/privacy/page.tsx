@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: 'プライバシーポリシー | ア
 
 export default function PrivacyPage() {
   return (
-    <LegalLayout title="プライバシーポリシー" updatedAt="2026年10月27日">
+    <LegalLayout title="プライバシーポリシー" updatedAt="2026年10月28日">
       <p>
         {OPERATOR_NAME}(以下「運営者」)は、「アカヌケ」(以下「本サービス」)で預かる情報を、このポリシーに従って取り扱います。
         個人が運営する小規模なサービスのため、簡易的な内容です。
@@ -21,7 +21,8 @@ export default function PrivacyPage() {
             行動プラン: 憧れの雰囲気、取り組みたい部分、気になっていること、予算、使える時間、好み・生活のこと、
             およびAIが作ったプラン(作り直す前のプランも履歴として保存されます)
           </li>
-          <li>AIへの質問(チャット)、AIの利用回数</li>
+          <li>AIへの質問(チャット)</li>
+          <li>AIの利用状況: 機能ごとの利用回数、利用日時、AIとのやりとりで使った量(トークン数)、ご契約のプランの種類</li>
           <li>ログイン状態を保つための Cookie</li>
         </ul>
         <p>広告や、ユーザーの行動を追跡するための解析ツールは、現在使っていません。</p>
@@ -30,7 +31,7 @@ export default function PrivacyPage() {
       <LegalSection heading="2. 利用目的">
         <ul className="list-disc space-y-1 pl-5">
           <li>本サービスの提供(記録の表示、グラフ、AIによるアドバイスの作成)</li>
-          <li>不正利用やAIの使いすぎを防ぐための、利用回数の管理</li>
+          <li>プランごとのAI利用回数の上限の管理、不正利用の防止、サービスの運営費の把握(利用状況の集計)</li>
           <li>お問い合わせへの対応、不具合の改善</li>
         </ul>
       </LegalSection>
