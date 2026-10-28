@@ -31,4 +31,4 @@ Next.js 16.4.3(App Router。`middleware` は `src/proxy.ts`)/ React 19 / TypeScr
 - **フェーズ2(今日のミッション)**: AI を使わず、保存済みプランの `weekly` から日本時間で「何日目」かを計算して1日1つ出す(`src/lib/mission.ts`、`npm test`)。記録は `mission_logs`(完了/お休み・1人1日1件)。ホームは `MissionCard`、マイプランは週間表に✓と進み具合。設計は `docs/05_phase2_design.md`。
 
 ## 次の手順
-フェーズ0(公開前の安全対策)は完了。`docs/02_roadmap.md` の **フェーズ1(MVP: 憧れ・悩みのヒアリング → プラン生成 → 保存・再表示)** から。進捗は `docs/02_roadmap.md` の「進捗メモ」に追記する。
+フェーズ0〜2(安全対策・プラン作成・今日のミッション)は完了。`docs/02_roadmap.md` の **フェーズ3(AI 相談でプランを調整。AI は提案だけ、ユーザーが承認してから反映)** から。進捗は `docs/02_roadmap.md` の「進捗メモ」に追記する。
