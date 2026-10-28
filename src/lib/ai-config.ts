@@ -16,6 +16,7 @@ const DEFAULT_MODEL = 'claude-sonnet-5'
 
 export const AI_FEATURES: Record<AiKind, AiFeatureConfig> = {
   plan: { model: DEFAULT_MODEL, maxTokens: 3000, thinking: 'disabled', lockSeconds: 120 },
+  plan_adjust: { model: DEFAULT_MODEL, maxTokens: 1500, thinking: 'disabled', lockSeconds: 90 },
   beauty: { model: DEFAULT_MODEL, maxTokens: 1200, thinking: 'default', lockSeconds: 90 },
   chat: { model: DEFAULT_MODEL, maxTokens: 1200, thinking: 'default', lockSeconds: 90 },
   todos: { model: DEFAULT_MODEL, maxTokens: 400, thinking: 'default', lockSeconds: 60 },

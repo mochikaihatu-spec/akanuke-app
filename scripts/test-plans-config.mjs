@@ -28,6 +28,11 @@ test('有料: プラン作成は月4回、AI美容相談は月100回、月額680
   assert.deepEqual(AI_QUOTAS.paid.beauty, { limit: 100, period: 'month' })
   assert.equal(PAID_PLAN.priceYenPerMonth, 680)
 })
+test('プラン相談(調整)は専用の回数: 無料 月5回、有料 月20回。プラン作成の回数とは別', () => {
+  assert.deepEqual(AI_QUOTAS.free.plan_adjust, { limit: 5, period: 'month' })
+  assert.deepEqual(AI_QUOTAS.paid.plan_adjust, { limit: 20, period: 'month' })
+  assert.equal(AI_QUOTAS.free.plan.limit, 1)
+})
 test('決済は未実装なので、購入できる扱いになっていない', () => {
   assert.equal(PAID_PLAN.purchasable, false)
 })

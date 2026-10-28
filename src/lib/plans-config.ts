@@ -2,7 +2,7 @@
 // 料金や回数はまず検証するための「初期案」。変えたいときはこのファイルの数字だけを直す
 
 export type Tier = 'free' | 'paid'
-export type AiKind = 'plan' | 'beauty' | 'chat' | 'todos' | 'meal_photo'
+export type AiKind = 'plan' | 'plan_adjust' | 'beauty' | 'chat' | 'todos' | 'meal_photo'
 export type Period = 'month' | 'day'
 export type Quota = { limit: number; period: Period }
 
@@ -16,6 +16,7 @@ export const PAID_PLAN = {
 export const AI_QUOTAS: Record<Tier, Record<AiKind, Quota>> = {
   free: {
     plan: { limit: 1, period: 'month' },
+    plan_adjust: { limit: 5, period: 'month' },
     beauty: { limit: 20, period: 'month' },
     chat: { limit: 20, period: 'day' },
     todos: { limit: 5, period: 'day' },
@@ -23,6 +24,7 @@ export const AI_QUOTAS: Record<Tier, Record<AiKind, Quota>> = {
   },
   paid: {
     plan: { limit: 4, period: 'month' },
+    plan_adjust: { limit: 20, period: 'month' },
     beauty: { limit: 100, period: 'month' },
     chat: { limit: 20, period: 'day' },
     todos: { limit: 5, period: 'day' },
@@ -32,6 +34,7 @@ export const AI_QUOTAS: Record<Tier, Record<AiKind, Quota>> = {
 
 export const AI_KIND_LABELS: Record<AiKind, string> = {
   plan: 'プラン作成',
+  plan_adjust: 'プラン相談',
   beauty: 'AI美容相談',
   chat: 'AIチャット',
   todos: '今日のToDo',

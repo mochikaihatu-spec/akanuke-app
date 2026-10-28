@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --no-warnings scripts/test-plan-schema.mjs && node --no-warnings scripts/test-plans-config.mjs && node --no-warnings scripts/test-mission.mjs"
+    "test": "node --no-warnings scripts/test-plan-schema.mjs && node --no-warnings scripts/test-plans-config.mjs && node --no-warnings scripts/test-mission.mjs && node --no-warnings scripts/test-plan-patch.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

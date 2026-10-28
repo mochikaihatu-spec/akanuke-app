@@ -18,6 +18,8 @@ import {
 type SavedPlan = {
   id: number
   created_at: string
+  cycleStart: string // 「1日目」の日付。調整しても引き継がれる
+  changeNote: string | null
   plan: PlanContent
   monthlyBudget: string | null
 }
@@ -47,7 +49,7 @@ export default function PlanPage() {
     async function load() {
       const { data, error: loadError } = await supabase
         .from('plans')
-        .select('id, created_at, content, ideal_snapshot')
+        .select('id, created_at, cycle_start, change_note, content, ideal_snapshot')
         .eq('status', 'active')
         .maybeSingle()
 
@@ -60,6 +62,8 @@ export default function PlanPage() {
           setSaved({
             id: data.id,
             created_at: data.created_at,
+            cycleStart: data.cycle_start ?? data.created_at,
+            changeNote: data.change_note ?? null,
             plan: checked.value,
             monthlyBudget: data.ideal_snapshot?.monthly_budget ?? null,
           })
@@ -105,7 +109,7 @@ export default function PlanPage() {
   const { plan } = saved
   const now = new Date()
   const today = jstDateString(now)
-  const progress = computeProgress(logs, saved.created_at, now)
+  const progress = computeProgress(logs, saved.cycleStart, now)
   const cost = totalMonthlyCost(plan)
   const budget = MONTHLY_BUDGETS.find((b) => b.value === saved.monthlyBudget)
 
@@ -113,7 +117,12 @@ export default function PlanPage() {
     <div className="flex min-h-screen justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">マイプラン</h1>
-        <p className="mt-1 text-xs text-slate-400">作成日: {formatDate(saved.created_at)}</p>
+        <p className="mt-1 text-xs text-slate-400">
+          {saved.changeNote ? '調整日' : '作成日'}: {formatDate(saved.created_at)}
+        </p>
+        {saved.changeNote && (
+          <p className="mt-1 text-xs leading-relaxed text-slate-400">調整のメモ: {saved.changeNote}</p>
+        )}
 
         <section className="mt-5 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
           <p className="text-xs font-medium text-blue-600">目指す雰囲気</p>
@@ -220,7 +229,7 @@ export default function PlanPage() {
         <section className="rounded-3xl border border-slate-100 bg-white p-2 shadow-sm">
           <ul className="divide-y divide-slate-100">
             {plan.weekly.map((item) => {
-              const date = dateOfDayInCycle(saved.created_at, now, item.day)
+              const date = dateOfDayInCycle(saved.cycleStart, now, item.day)
               const log = logs.find((l) => l.mission_date === date)
               const isToday = date === today
               return (
@@ -262,8 +271,17 @@ export default function PlanPage() {
           <UsageNote item={usage?.items.plan} />
         </div>
         <Link
+          href="/plan/consult"
+          className="mt-3 block rounded-xl bg-blue-600 py-3 text-center text-base font-medium text-white"
+        >
+          プランについて相談する
+        </Link>
+        <p className="mt-2 text-center text-xs text-slate-400">
+          続けにくいところを、少しだけ直せます(承認するまで変わりません)
+        </p>
+        <Link
           href="/onboarding"
-          className="mt-3 block rounded-xl border border-slate-200 bg-white py-3 text-center text-base font-medium text-slate-600"
+          className="mt-4 block rounded-xl border border-slate-200 bg-white py-3 text-center text-base font-medium text-slate-600"
         >
           答えを変えてプランを作り直す
         </Link>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { validatePlan, type PlanContent } from '@/lib/plan-schema'
 import {
@@ -12,7 +13,7 @@ import {
 } from '@/lib/mission'
 import { saveMission, undoMission, useMissionLogs } from '@/lib/use-missions'
 
-type ActivePlan = { id: number; createdAt: string; plan: PlanContent }
+type ActivePlan = { id: number; cycleStart: string; plan: PlanContent }
 
 // ホームに出す「今日のミッション」。プランの週間プランから、今日の分を取り出す(AIは使わない)
 export default function MissionCard() {
@@ -26,13 +27,13 @@ export default function MissionCard() {
     async function load() {
       const { data } = await supabase
         .from('plans')
-        .select('id, created_at, content')
+        .select('id, created_at, cycle_start, content')
         .eq('status', 'active')
         .maybeSingle()
 
       if (data) {
         const checked = validatePlan(data.content)
-        if (checked.ok) setActive({ id: data.id, createdAt: data.created_at, plan: checked.value })
+        if (checked.ok) setActive({ id: data.id, cycleStart: data.cycle_start ?? data.created_at, plan: checked.value })
       }
       setPlanLoaded(true)
     }
@@ -44,11 +45,11 @@ export default function MissionCard() {
 
   const now = new Date()
   const today = jstDateString(now)
-  const mission = todaysMission(active.plan.weekly, active.createdAt, now)
+  const mission = todaysMission(active.plan.weekly, active.cycleStart, now)
   if (!mission) return null
 
   const todayLog = logs.find((l) => l.mission_date === today)
-  const progress = computeProgress(logs, active.createdAt, now)
+  const progress = computeProgress(logs, active.cycleStart, now)
 
   async function record(status: 'done' | 'rest') {
     if (!mission || busy) return
@@ -138,6 +139,10 @@ export default function MissionCard() {
         今週 {progress.weekDone}/7 完了
         {progress.streak > 0 && ` ・ 連続 ${progress.streak}日`}
       </p>
+
+      <Link href="/plan/consult" className="mt-2 inline-block text-xs font-medium text-blue-600">
+        このミッションを調整する
+      </Link>
 
       {(error || logsError) && (
         <p className="mt-2 text-xs font-medium text-red-600">

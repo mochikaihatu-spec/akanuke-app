@@ -292,3 +292,37 @@ export function totalMonthlyCost(plan: PlanContent) {
   }
   return { total, unknown }
 }
+
+// 調整後のプランが、予算や1日の時間を超えていないかの注意書き(止めはせず、画面で知らせる)
+export function planWarnings(
+  plan: PlanContent,
+  ideal: { monthly_budget?: string | null; daily_minutes?: number | null }
+): string[] {
+  const warnings: string[] = []
+
+  const budget = MONTHLY_BUDGETS.find((b) => b.value === ideal.monthly_budget)
+  if (budget && budget.yen !== null) {
+    const { total } = totalMonthlyCost(plan)
+    if (total > budget.yen) {
+      warnings.push(
+        `1か月の費用の目安が${total.toLocaleString('ja-JP')}円になり、予算(${budget.label})を超えています`
+      )
+    }
+  }
+
+  const limit = ideal.daily_minutes
+  if (typeof limit === 'number') {
+    if (plan.weekly.some((w) => w.minutes > limit)) {
+      warnings.push(`週間プランに、1日に使える時間(${limit}分)を超える日があります`)
+    }
+    const everyDay = plan.elements
+      .flatMap((e) => e.actions)
+      .filter((a) => a.frequency.includes('毎日'))
+      .reduce((sum, a) => sum + a.minutes, 0)
+    if (everyDay > limit) {
+      warnings.push(`毎日やる行動の合計(約${everyDay}分)が、1日に使える時間(${limit}分)を超えています`)
+    }
+  }
+
+  return warnings
+}
