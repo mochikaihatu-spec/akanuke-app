@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useUsage } from '@/lib/use-usage'
+import { useMissionLogs } from '@/lib/use-missions'
+import { computeProgress, dateOfDayInCycle, jstDateString } from '@/lib/mission'
 import UsageNote from '@/components/UsageNote'
 import {
   MONTHLY_BUDGETS,
@@ -39,6 +41,7 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const { usage } = useUsage()
+  const { logs } = useMissionLogs()
 
   useEffect(() => {
     async function load() {
@@ -100,6 +103,9 @@ export default function PlanPage() {
   }
 
   const { plan } = saved
+  const now = new Date()
+  const today = jstDateString(now)
+  const progress = computeProgress(logs, saved.created_at, now)
   const cost = totalMonthlyCost(plan)
   const budget = MONTHLY_BUDGETS.find((b) => b.value === saved.monthlyBudget)
 
@@ -182,21 +188,71 @@ export default function PlanPage() {
         </section>
 
         <h2 className="mb-3 mt-8 text-base font-semibold text-slate-900">今週のプラン</h2>
+
+        <section className="mb-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div className="flex items-baseline justify-between">
+            <p className="text-xs font-medium text-slate-500">今週の進み具合</p>
+            <p className="text-sm font-semibold text-slate-900">{progress.weekDone}/7 完了</p>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-blue-600"
+              style={{ width: `${(progress.weekDone / 7) * 100}%` }}
+            />
+          </div>
+          <p className="mt-3 text-xs text-slate-400">
+            連続 {progress.streak}日 ・ これまで合計 {progress.totalDone}回
+          </p>
+          {Object.keys(progress.byArea).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(progress.byArea).map(([area, count]) => (
+                <span
+                  key={area}
+                  className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+                >
+                  {area} {count}回
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+
         <section className="rounded-3xl border border-slate-100 bg-white p-2 shadow-sm">
           <ul className="divide-y divide-slate-100">
-            {plan.weekly.map((item) => (
-              <li key={item.day} className="flex gap-3 p-4">
-                <span className="mt-0.5 w-12 shrink-0 text-xs font-semibold text-blue-600">
-                  {item.day}日目
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm leading-relaxed text-slate-700">{item.task}</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    {item.area}・約{item.minutes}分
-                  </p>
-                </div>
-              </li>
-            ))}
+            {plan.weekly.map((item) => {
+              const date = dateOfDayInCycle(saved.created_at, now, item.day)
+              const log = logs.find((l) => l.mission_date === date)
+              const isToday = date === today
+              return (
+                <li
+                  key={item.day}
+                  className={`flex gap-3 p-4 ${isToday ? 'rounded-2xl bg-blue-50/60' : ''}`}
+                >
+                  <span className="mt-0.5 w-12 shrink-0 text-xs font-semibold text-blue-600">
+                    {item.day}日目
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm leading-relaxed text-slate-700">{item.task}</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {item.area}・約{item.minutes}分
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    {isToday && (
+                      <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-medium text-white">
+                        今日
+                      </span>
+                    )}
+                    {log?.status === 'done' && (
+                      <span className="text-xs font-semibold text-green-600">✓ 完了</span>
+                    )}
+                    {log?.status === 'rest' && (
+                      <span className="text-xs font-medium text-slate-400">お休み</span>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         </section>
 

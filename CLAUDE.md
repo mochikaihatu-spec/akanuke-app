@@ -28,5 +28,7 @@ Next.js 16.4.3(App Router。`middleware` は `src/proxy.ts`)/ React 19 / TypeScr
 - **公開範囲を広げる前の宿題**: Notion トークンの無効化(ユーザー作業)、独自SMTP、CAPTCHA、規約・ポリシーの専門家確認。
 - 保留: 間接依存 4 件の脆弱性(zod / js-yaml / brace-expansion / source-map-js。本番の外部入力経路ではない)。
 
+- **フェーズ2(今日のミッション)**: AI を使わず、保存済みプランの `weekly` から日本時間で「何日目」かを計算して1日1つ出す(`src/lib/mission.ts`、`npm test`)。記録は `mission_logs`(完了/お休み・1人1日1件)。ホームは `MissionCard`、マイプランは週間表に✓と進み具合。設計は `docs/05_phase2_design.md`。
+
 ## 次の手順
 フェーズ0(公開前の安全対策)は完了。`docs/02_roadmap.md` の **フェーズ1(MVP: 憧れ・悩みのヒアリング → プラン生成 → 保存・再表示)** から。進捗は `docs/02_roadmap.md` の「進捗メモ」に追記する。

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getUserId, supabase } from '@/lib/supabase'
 import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
 import PlanCard from '@/components/PlanCard'
+import MissionCard from '@/components/MissionCard'
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true)
@@ -252,6 +253,8 @@ export default function HomePage() {
         {error && (
           <p className="text-center text-sm font-medium text-red-600">{error}</p>
         )}
+
+        <MissionCard />
 
         <PlanCard />
 
