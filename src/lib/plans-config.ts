@@ -20,7 +20,7 @@ export const AI_QUOTAS: Record<Tier, Record<AiKind, Quota>> = {
     beauty: { limit: 20, period: 'month' },
     chat: { limit: 20, period: 'day' },
     todos: { limit: 5, period: 'day' },
-    meal_photo: { limit: 10, period: 'day' },
+    meal_photo: { limit: 3, period: 'month' },
   },
   paid: {
     plan: { limit: 4, period: 'month' },
@@ -28,7 +28,7 @@ export const AI_QUOTAS: Record<Tier, Record<AiKind, Quota>> = {
     beauty: { limit: 100, period: 'month' },
     chat: { limit: 20, period: 'day' },
     todos: { limit: 5, period: 'day' },
-    meal_photo: { limit: 10, period: 'day' },
+    meal_photo: { limit: 5, period: 'day' },
   },
 }
 

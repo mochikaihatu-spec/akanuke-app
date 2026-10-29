@@ -33,6 +33,19 @@ test('プラン相談(調整)は専用の回数: 無料 月5回、有料 月20�
   assert.deepEqual(AI_QUOTAS.paid.plan_adjust, { limit: 20, period: 'month' })
   assert.equal(AI_QUOTAS.free.plan.limit, 1)
 })
+test('食事写真AI: 無料は月3回(月初リセット)、有料は1日5回(0時リセット)', () => {
+  assert.deepEqual(AI_QUOTAS.free.meal_photo, { limit: 3, period: 'month' })
+  assert.deepEqual(AI_QUOTAS.paid.meal_photo, { limit: 5, period: 'day' })
+})
+test('食事写真AIの変更で、ほかのAI機能の上限は変わっていない', () => {
+  assert.deepEqual(AI_QUOTAS.free.chat, { limit: 20, period: 'day' })
+  assert.deepEqual(AI_QUOTAS.paid.chat, { limit: 20, period: 'day' })
+  assert.deepEqual(AI_QUOTAS.free.todos, { limit: 5, period: 'day' })
+  assert.deepEqual(AI_QUOTAS.paid.todos, { limit: 5, period: 'day' })
+  assert.deepEqual(AI_QUOTAS.free.plan, { limit: 1, period: 'month' })
+  assert.deepEqual(AI_QUOTAS.free.plan_adjust, { limit: 5, period: 'month' })
+  assert.deepEqual(AI_QUOTAS.free.beauty, { limit: 20, period: 'month' })
+})
 test('決済は未実装なので、購入できる扱いになっていない', () => {
   assert.equal(PAID_PLAN.purchasable, false)
 })
@@ -99,6 +112,16 @@ test('購入できない間は「購入できる」ような言い方をしな�
 test('有料プランの人には案内を出さない / 上限が同じ機能にも出さない', () => {
   assert.equal(upgradeHint('plan', 'paid'), null)
   assert.equal(upgradeHint('chat', 'free'), null)
+})
+test('食事写真AIの上限メッセージ: 無料は今月・月初リセット、有料は今日・0時リセット', () => {
+  const at = new Date('2026-10-15T03:00:00Z')
+  const free = limitMessage('meal_photo', 'free', at)
+  assert.ok(free.includes('今月の食事の写真解析の上限(3回)に達しました'))
+  assert.ok(free.includes('11月1日 0時(日本時間)にリセット'))
+  assert.ok(free.includes('準備中') && free.includes('1日5回'))
+  const paid = limitMessage('meal_photo', 'paid', at)
+  assert.ok(paid.includes('今日の食事の写真解析の上限(5回)に達しました'))
+  assert.ok(paid.includes('明日 0時(日本時間)にリセット'))
 })
 test('残り回数の文', () => {
   assert.equal(remainingText('plan', 'free', 0), '今月のプラン作成: あと1回(全1回)')

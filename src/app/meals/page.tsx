@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getUserId, supabase } from '@/lib/supabase'
 import { AiApiError, aiErrorMessage } from '@/lib/ai-error'
+import { useUsage } from '@/lib/use-usage'
 
 const inputClass =
   'rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100'
@@ -64,6 +65,11 @@ export default function MealsPage() {
   const [draftPhotoUrl, setDraftPhotoUrl] = useState<string | null>(null)
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [photoError, setPhotoError] = useState('')
+
+  // 写真解析の残り回数(数えるのはサーバー。ここは表示と、上限に達したときの無効化だけ)
+  const { usage, reload: reloadUsage } = useUsage()
+  const photoUsage = usage?.items.meal_photo
+  const photoLimitReached = photoUsage?.remaining === 0
 
   const loadData = useCallback(async () => {
     const now = new Date()
@@ -139,7 +145,7 @@ export default function MealsPage() {
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
-    if (!file) return
+    if (!file || photoLimitReached) return
 
     setPhotoError('')
     setAnalyzing(true)
@@ -173,6 +179,8 @@ export default function MealsPage() {
       setPhotoPreviewUrl(null)
     } finally {
       setAnalyzing(false)
+      // 成功で1回減った/上限(429)だった、どちらも最新の残り回数に取り直す
+      reloadUsage()
     }
   }
 
@@ -242,17 +250,45 @@ export default function MealsPage() {
                   className="h-40 w-40 rounded-2xl object-cover"
                 />
               )}
-              <label className="w-full cursor-pointer rounded-xl border border-slate-200 py-3 text-center text-base font-medium text-slate-700 transition-colors">
-                {analyzing ? '解析中...' : '写真から記録する'}
+              {photoUsage && (
+                <div className="w-full rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-600">
+                  <p className="font-semibold text-slate-900">
+                    {photoUsage.period === 'month' ? '今月' : '本日'}あと{photoUsage.remaining}回
+                    <span className="ml-1 text-xs font-normal text-slate-500">(全{photoUsage.limit}回)</span>
+                  </p>
+                  {photoLimitReached ? (
+                    <>
+                      <p className="mt-1 text-xs text-slate-600">
+                        上限に達しました。{photoUsage.resetLabel}にリセットされます。
+                      </p>
+                      {photoUsage.hint && <p className="mt-1 text-xs text-slate-500">{photoUsage.hint}</p>}
+                    </>
+                  ) : (
+                    <p className="mt-0.5 text-xs text-slate-500">{photoUsage.resetLabel}にリセットされます</p>
+                  )}
+                </div>
+              )}
+              <label
+                aria-disabled={analyzing || photoLimitReached}
+                className={`w-full rounded-xl border py-3 text-center text-base font-medium transition-colors ${
+                  photoLimitReached
+                    ? 'cursor-not-allowed border-slate-100 bg-slate-100 text-slate-500'
+                    : 'cursor-pointer border-slate-200 text-slate-700'
+                }`}
+              >
+                {analyzing ? '解析中...' : photoLimitReached ? '上限に達しました' : '写真から記録する'}
                 <input
                   type="file"
                   accept="image/*"
                   capture="environment"
                   onChange={handlePhotoSelect}
-                  disabled={analyzing}
+                  disabled={analyzing || photoLimitReached}
                   className="hidden"
                 />
               </label>
+              <p className="text-center text-xs text-slate-500">
+                手入力での記録は、回数に関係なくいつでもできます
+              </p>
               {photoError && (
                 <p className="text-center text-sm font-medium text-red-600">
                   {photoError}
