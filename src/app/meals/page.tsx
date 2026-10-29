@@ -18,6 +18,34 @@ type MealRecord = {
   eaten_at: string
 }
 
+// AIに送る写真の長辺の上限(px)。食事の判定には十分で、送信サイズ(Vercel は約4.5MBまで)と利用料も抑えられる
+const MAX_PHOTO_EDGE = 1568
+
+// スマートフォンの写真は数MBあるので、送る前に縮小してJPEGにする。
+// 縮小できない(読み込めない)ときや、元のほうが小さいときは、元の写真をそのまま使う
+async function prepareMealPhoto(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+    const scale = Math.min(1, MAX_PHOTO_EDGE / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(bitmap.width * scale)
+    canvas.height = Math.round(bitmap.height * scale)
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      bitmap.close()
+      return file
+    }
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close()
+
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+    if (!blob || blob.size >= file.size) return file
+    return new File([blob], 'meal.jpg', { type: 'image/jpeg' })
+  } catch {
+    return file
+  }
+}
+
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -152,17 +180,24 @@ export default function MealsPage() {
     setPhotoPreviewUrl(URL.createObjectURL(file))
 
     try {
-      const base64 = await fileToBase64(file)
+      const photo = await prepareMealPhoto(file)
+      const base64 = await fileToBase64(photo)
 
       const [uploadedUrl, analysis] = await Promise.all([
-        uploadMealPhoto(file),
+        uploadMealPhoto(photo),
         fetch('/api/analyze-meal-photo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64, mediaType: file.type }),
+          body: JSON.stringify({ image: base64, mediaType: photo.type }),
         }).then(async (res) => {
-          const data = await res.json()
-          if (!res.ok) throw new AiApiError(data.error ?? '解析に失敗しました')
+          // サーバーに届く前に断られたとき(413 など)は JSON ではないので、読めなくても落とさない
+          const data = await res.json().catch(() => ({}))
+          if (!res.ok) {
+            throw new AiApiError(
+              data.error ??
+                (res.status === 413 ? '写真が大きすぎます。別の写真でお試しください' : '解析に失敗しました')
+            )
+          }
           return data
         }),
       ])
