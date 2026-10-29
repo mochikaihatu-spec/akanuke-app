@@ -93,4 +93,5 @@ AI は次をしない。共通の system プロンプトを1か所に定義し�
 - 2026-10-28: 料金プラン・利用制限(6d98728、`docs/04_usage_limits_and_tiers.md`)、フェーズ1・フェーズ2(`docs/03_phase1_design.md`、`docs/05_phase2_design.md`)を本番反映。次はフェーズ3(AI 相談でプラン調整・承認制)。
 - 2026-10-28: フェーズ3(AI 相談でプラン調整・承認制)を本番反映(839f715、`docs/06_phase3_design.md`)。MVP の機能(ヒアリング→プラン生成→保存→今日のミッション→完了記録→AI 相談で調整)がそろった。次は、実際に使って検証するフェーズ(フェーズ5相当)と、公開前の宿題(Notion トークン無効化・独自SMTP・規約の専門家確認・決済)。
 
-- 2026-10-29: 食事写真AIの上限を変更(無料 月3回 / 有料 1日5回。`src/lib/plans-config.ts` の数字と食事記録画面の残り回数表示のみ。DB・API の仕組みは既存のまま)。試験は `supabase/tests/meal_photo_limits_test.sql`(SQL Editor で実行)。決済は未実装のため、有料判定は従来どおり `subscriptions` 表のみ。
+- 2026-10-29: 食事写真AIの上限を変更(無料 月3回 / 有料 1日5回。`src/lib/plans-config.ts` の数字と食事記録画面の残り回数表示のみ。DB・API の仕組みは既存のまま)。試験は `supabase/tests/meal_photo_limits_test.sql`(SQL Editor で実行)。決済は未実装のため、有料判定は従来どおり `subscriptions` 表のみ。SQL 試験 16 項目すべて OK。写真は撮影だけでなくアルバムからも選べるように(`capture` 指定を外した)。
+- 2026-10-29: フェーズ4(ホーム・4タブナビ・AI相談/記録ページ・ラベンダー系デザイン統一。`docs/08_phase4_design.md`)と上の食事写真AIの変更を本番反映(5042dda、プレビューをスマートフォンで確認後)。未ログインでの本番確認: 画面は 307(ログインへ)、`/api/*` は 401。次は、友人数名の検証(`supabase/analytics/usage_report.sql` で原価確認)、公開前の宿題(独自SMTP・CAPTCHA・規約の専門家確認・Notion トークン無効化)、決済。
