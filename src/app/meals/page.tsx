@@ -63,7 +63,8 @@ async function uploadMealPhoto(file: File) {
   const userId = await getUserId()
   if (!userId) throw new Error('ログインが必要です')
 
-  const ext = file.name.split('.').pop() || 'jpg'
+  // 保存先の名前に使えるのは英数字だけ(ファイル名に「.」がない・日本語などのときは jpg にする)
+  const ext = file.name.match(/\.([A-Za-z0-9]{1,5})$/)?.[1].toLowerCase() ?? 'jpg'
   const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
   const { error } = await supabase.storage.from('meal-photos').upload(path, file)
@@ -93,6 +94,7 @@ export default function MealsPage() {
   const [draftPhotoUrl, setDraftPhotoUrl] = useState<string | null>(null)
   const [savingPhoto, setSavingPhoto] = useState(false)
   const [photoError, setPhotoError] = useState('')
+  const [photoNotice, setPhotoNotice] = useState('')
 
   // 写真解析の残り回数(数えるのはサーバー。ここは表示と、上限に達したときの無効化だけ)
   const { usage, reload: reloadUsage } = useUsage()
@@ -168,6 +170,7 @@ export default function MealsPage() {
     setDraftPhotoUrl(null)
     setPhotoPreviewUrl(null)
     setPhotoError('')
+    setPhotoNotice('')
   }
 
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -176,6 +179,7 @@ export default function MealsPage() {
     if (!file || photoLimitReached) return
 
     setPhotoError('')
+    setPhotoNotice('')
     setAnalyzing(true)
     setPhotoPreviewUrl(URL.createObjectURL(file))
 
@@ -183,8 +187,15 @@ export default function MealsPage() {
       const photo = await prepareMealPhoto(file)
       const base64 = await fileToBase64(photo)
 
-      const [uploadedUrl, analysis] = await Promise.all([
-        uploadMealPhoto(photo),
+      const [uploaded, analysis] = await Promise.all([
+        // 写真の保存に失敗しても、解析の結果は使えるようにする(解析はすでに1回として数えられるため)
+        uploadMealPhoto(photo).then(
+          (path) => ({ path, reason: '' }),
+          (e: unknown) => {
+            console.error('Meal photo upload failed:', e)
+            return { path: null, reason: e instanceof Error ? e.message : '' }
+          }
+        ),
         fetch('/api/analyze-meal-photo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -202,7 +213,10 @@ export default function MealsPage() {
         }),
       ])
 
-      setDraftPhotoUrl(uploadedUrl)
+      setDraftPhotoUrl(uploaded.path)
+      if (uploaded.path === null) {
+        setPhotoNotice(`写真の保存に失敗したため、写真なしで記録されます${uploaded.reason ? `(理由: ${uploaded.reason})` : ''}`)
+      }
       setDraftName(analysis.name ?? '')
       setDraftCalories(analysis.calories !== null ? String(analysis.calories) : '')
       setDraftProteinG(
@@ -343,6 +357,11 @@ export default function MealsPage() {
               <p className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs text-blue-700">
                 AIの推定です。内容を確認・修正してから記録してください
               </p>
+              {photoNotice && (
+                <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                  {photoNotice}
+                </p>
+              )}
 
               <label className="flex flex-col gap-2">
                 <span className={labelClass}>食品名</span>
