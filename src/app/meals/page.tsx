@@ -280,14 +280,13 @@ export default function MealsPage() {
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   onChange={handlePhotoSelect}
                   disabled={analyzing || photoLimitReached}
                   className="hidden"
                 />
               </label>
               <p className="text-center text-xs text-slate-500">
-                手入力での記録は、回数に関係なくいつでもできます
+                カメラで撮影するか、アルバム(フォルダ)の写真を選べます。手入力は回数に関係なくいつでもできます
               </p>
               {photoError && (
                 <p className="text-center text-sm font-medium text-red-600">
